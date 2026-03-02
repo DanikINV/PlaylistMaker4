@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white">
+
+    <!-- Toolbar -->
+    <LinearLayout
+        android:id="@+id/toolbar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="@dimen/spacing_medium">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="@dimen/icon_size"
+            android:layout_height="@dimen/icon_size"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="@string/back"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings"
+            android:textSize="@dimen/text_size_title"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginStart="@dimen/spacing_medium" />
+    </LinearLayout>
+
+    <!-- Dark theme -->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switch_dark_theme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_medium"
+        android:paddingVertical="14dp"
+        android:text="@string/dark_theme"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/black" />
+
+    <!-- Share app -->
+    <TextView
+        android:id="@+id/btn_share"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_medium"
+        android:paddingVertical="14dp"
+        android:text="@string/share_app"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        app:drawableEndCompat="@drawable/ic_share"
+        app:drawableTint="@color/black"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
+
+    <!-- Support -->
+    <TextView
+        android:id="@+id/btn_support"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_medium"
+        android:paddingVertical="14dp"
+        android:text="@string/support"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        app:drawableEndCompat="@drawable/ic_support"
+        app:drawableTint="@color/black"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
+
+    <!-- User agreement -->
+    <TextView
+        android:id="@+id/btn_user_agreement"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/spacing_medium"
+        android:paddingVertical="14dp"
+        android:text="@string/user_agreement"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        app:drawableEndCompat="@drawable/ic_arrow_forward"
+        app:drawableTint="@color/black"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
+
+</LinearLayout>
