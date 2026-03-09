@@ -1,16 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/white_primary">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Toolbar: назад + "Поиск" -->
+    <LinearLayout
+        android:id="@+id/toolbar_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/search"
-        android:textSize="22sp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="@dimen/spacing_medium">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_arrow_back"
+            tools:ignore="TouchTargetSizeCheck" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/search"
+            style="@style/TextAppearance.PlaylistMaker.Title" />
+
+    </LinearLayout>
+
+    <!-- Поле поиска -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginHorizontal="@dimen/spacing_medium"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/search_field_bg"
+        android:paddingHorizontal="10dp">
+
+        <!-- Иконка поиска -->
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_search"
+            android:contentDescription="@null"
+            app:tint="@color/hint_color" />
+
+        <!-- Поле ввода -->
+        <EditText
+            android:id="@+id/et_search"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="6dp"
+            android:background="@null"
+            android:hint="@string/search_hint"
+            android:textColorHint="@color/hint_color"
+            android:textColor="@color/blackSearch"
+            android:textSize="@dimen/text_size_body"
+            android:fontFamily="@font/ys_display_regular"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:importantForAutofill="no"
+            tools:ignore="LabelFor" />
+
+        <!-- Кнопка X -->
+        <ImageView
+            android:id="@+id/btn_clear_search"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_search_clear"
+            android:contentDescription="@null"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            app:tint="@color/hint_color"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
 </LinearLayout>

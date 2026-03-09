@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="white">#1C1B1F</color>
+    <color name="blue_primary">#1C1B1F</color>
+    <color name="white_primary">#1C1B1F</color>
+    <color name="white">#000000</color>
     <color name="black">#FFFFFF</color>
+    <color name="blackSearch">#000000</color>
+    <color name="whiteTitle">#FFFFFF</color>
+    <color name="blackButton">#000000</color>
     <color name="divider">#3A3A3A</color>
+    <color name="button_background">#FFFFFF</color>
+    <color name="search_field_bg">#FFFFFF</color>
+    <color name="hint_color">#000000</color>
 </resources>

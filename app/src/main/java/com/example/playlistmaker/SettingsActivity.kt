@@ -7,9 +7,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -20,9 +23,17 @@ class SettingsActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_settings)
 
-        val rootView = findViewById<android.view.View>(R.id.root_layout)
+        val isNightMode = resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
 
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNightMode
+        }
+
+        val rootView = findViewById<android.view.View>(R.id.root_layout)
         val toolbarLayout = findViewById<LinearLayout>(R.id.toolbar_layout)
+
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val density = resources.displayMetrics.density
@@ -31,11 +42,21 @@ class SettingsActivity : AppCompatActivity() {
             insets
         }
 
-        // Back button
         val backButton = findViewById<ImageView>(R.id.btn_back)
         backButton.setOnClickListener { finish() }
 
-        // Share app
+        val switchDarkTheme = findViewById<SwitchCompat>(R.id.switch_dark_theme)
+        val prefs = getSharedPreferences("playlist_maker_prefs", MODE_PRIVATE)
+        switchDarkTheme.isChecked = prefs.getBoolean("dark_theme", false)
+
+        switchDarkTheme.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("dark_theme", isChecked).apply()
+            AppCompatDelegate.setDefaultNightMode(
+                if (isChecked) AppCompatDelegate.MODE_NIGHT_YES
+                else AppCompatDelegate.MODE_NIGHT_NO
+            )
+        }
+
         val btnShare = findViewById<TextView>(R.id.btn_share)
         btnShare.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -45,7 +66,6 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent.createChooser(shareIntent, getString(R.string.share_app)))
         }
 
-        // Support
         val btnSupport = findViewById<TextView>(R.id.btn_support)
         btnSupport.setOnClickListener {
             val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
@@ -56,14 +76,9 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(emailIntent)
         }
 
-        // User agreement
         val btnUserAgreement = findViewById<TextView>(R.id.btn_user_agreement)
         btnUserAgreement.setOnClickListener {
-            val browserIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(getString(R.string.user_agreement_url))
-            )
-            startActivity(browserIntent)
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.user_agreement_url))))
         }
     }
 }

@@ -2,13 +2,13 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/white_primary">
 
-    <!-- Toolbar -->
     <LinearLayout
         android:id="@+id/toolbar_layout"
         android:layout_width="match_parent"
@@ -19,84 +19,52 @@
 
         <ImageView
             android:id="@+id/btn_back"
-            android:layout_width="@dimen/icon_size"
-            android:layout_height="@dimen/icon_size"
-            android:src="@drawable/ic_arrow_back"
-            android:contentDescription="@string/back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
+            android:contentDescription="@string/back"
             android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:src="@drawable/ic_arrow_back"
+            tools:ignore="TouchTargetSizeCheck" />
 
+        <!-- Заголовок -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/settings"
-            android:textSize="@dimen/text_size_title"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginStart="@dimen/spacing_medium" />
+            style="@style/TextAppearance.PlaylistMaker.Title" />
+
     </LinearLayout>
 
-    <!-- Dark theme -->
+    <!-- Строки -->
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_dark_theme"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="@dimen/spacing_medium"
         android:paddingVertical="14dp"
-        android:text="@string/dark_theme"
+        android:fontFamily="@font/ys_display_regular"
         android:textSize="@dimen/text_size_body"
-        android:textColor="@color/black" />
+        android:textColor="@color/black"
+        android:text="@string/dark_theme" />
 
-    <!-- Share app -->
     <TextView
         android:id="@+id/btn_share"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="@dimen/spacing_medium"
-        android:paddingVertical="14dp"
+        style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/share_app"
-        android:textSize="@dimen/text_size_body"
-        android:textColor="@color/black"
-        android:gravity="center_vertical"
-        app:drawableEndCompat="@drawable/ic_share"
-        app:drawableTint="@color/black"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground" />
+        app:drawableEndCompat="@drawable/ic_share" />
 
-    <!-- Support -->
     <TextView
         android:id="@+id/btn_support"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="@dimen/spacing_medium"
-        android:paddingVertical="14dp"
+        style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/support"
-        android:textSize="@dimen/text_size_body"
-        android:textColor="@color/black"
-        android:gravity="center_vertical"
-        app:drawableEndCompat="@drawable/ic_support"
-        app:drawableTint="@color/black"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground" />
+        app:drawableEndCompat="@drawable/ic_support" />
 
-    <!-- User agreement -->
     <TextView
         android:id="@+id/btn_user_agreement"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="@dimen/spacing_medium"
-        android:paddingVertical="14dp"
+        style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/user_agreement"
-        android:textSize="@dimen/text_size_body"
-        android:textColor="@color/black"
-        android:gravity="center_vertical"
-        app:drawableEndCompat="@drawable/ic_arrow_forward"
-        app:drawableTint="@color/black"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground" />
+        app:drawableEndCompat="@drawable/ic_arrow_forward" />
 
 </LinearLayout>
