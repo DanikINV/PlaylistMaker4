@@ -11,4 +11,5 @@
     <color name="button_background">#FFFFFF</color>
     <color name="search_field_bg">#E6E8EB</color>
     <color name="hint_color">#AEAFB4</color>
+    <color name="settings_icon_color">#000000</color>
 </resources>

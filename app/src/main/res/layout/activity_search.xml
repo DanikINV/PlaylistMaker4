@@ -56,38 +56,46 @@
             android:contentDescription="@null"
             app:tint="@color/hint_color" />
 
-        <!-- Поле ввода -->
-        <EditText
-            android:id="@+id/et_search"
+        <!-- EditText и кнопка X в FrameLayout (кнопка поверх поля ввода) -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginHorizontal="6dp"
-            android:background="@null"
-            android:hint="@string/search_hint"
-            android:textColorHint="@color/hint_color"
-            android:textColor="@color/blackSearch"
-            android:textSize="@dimen/text_size_body"
-            android:fontFamily="@font/ys_display_regular"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:importantForAutofill="no"
-            tools:ignore="LabelFor" />
+            android:layout_marginStart="6dp">
 
-        <!-- Кнопка X -->
-        <ImageView
-            android:id="@+id/btn_clear_search"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@drawable/ic_search_clear"
-            android:contentDescription="@null"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            app:tint="@color/hint_color"
-            android:visibility="gone" />
+            <EditText
+                android:id="@+id/et_search"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingEnd="24dp"
+                android:background="@null"
+                android:hint="@string/search_hint"
+                android:textColorHint="@color/hint_color"
+                android:textColor="@color/blackSearch"
+                android:textSize="@dimen/text_size_body"
+                android:fontFamily="@font/ys_display_regular"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:inputType="text"
+                android:imeOptions="actionSearch"
+                android:importantForAutofill="no"
+                tools:ignore="LabelFor" />
+
+            <!-- Кнопка X поверх поля ввода -->
+            <ImageView
+                android:id="@+id/btn_clear_search"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center_vertical|end"
+                android:src="@drawable/ic_search_clear"
+                android:contentDescription="@null"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                app:tint="@color/hint_color"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

@@ -23,11 +23,13 @@ class SettingsActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_settings)
 
+        // Экран настроек светлый/тёмный → иконки статус-бара подстраиваются под тему
         val isNightMode = resources.configuration.uiMode and
             android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
             android.content.res.Configuration.UI_MODE_NIGHT_YES
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
+            // Светлая тема → тёмные иконки; тёмная → светлые
             isAppearanceLightStatusBars = !isNightMode
         }
 
@@ -38,7 +40,7 @@ class SettingsActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val density = resources.displayMetrics.density
             val spacing = (16 * density).toInt()
-            toolbarLayout.setPadding(spacing, systemBars.top, spacing, spacing)
+            toolbarLayout.setPadding(spacing, systemBars.top + spacing, spacing, spacing)
             insets
         }
 
@@ -69,7 +71,8 @@ class SettingsActivity : AppCompatActivity() {
         val btnSupport = findViewById<TextView>(R.id.btn_support)
         btnSupport.setOnClickListener {
             val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:${getString(R.string.support_email)}")
+                data = Uri.parse("mailto:")
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.support_email)))
                 putExtra(Intent.EXTRA_SUBJECT, getString(R.string.support_subject))
                 putExtra(Intent.EXTRA_TEXT, getString(R.string.support_body))
             }

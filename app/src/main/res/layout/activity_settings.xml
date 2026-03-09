@@ -28,7 +28,7 @@
             android:src="@drawable/ic_arrow_back"
             tools:ignore="TouchTargetSizeCheck" />
 
-        <!-- Заголовок -->
+        <!-- Заголовок: YS Display Medium/500, 22sp -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -37,7 +37,7 @@
 
     </LinearLayout>
 
-    <!-- Строки -->
+    <!-- Строки: YS Display Regular/400, 16sp через стиль SettingsItem -->
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_dark_theme"
         android:layout_width="match_parent"

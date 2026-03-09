@@ -23,10 +23,13 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
+        // Контент рисуется под статус-барами
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContentView(R.layout.activity_main)
 
+        // API 35+: цвет иконок статус-бара задаётся только так
+        // Главный экран всегда тёмный (синий или #1C1B1F) → иконки светлые
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
         }
