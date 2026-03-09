@@ -20,16 +20,13 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         setContentView(R.layout.activity_settings)
 
-        // Экран настроек светлый/тёмный → иконки статус-бара подстраиваются под тему
         val isNightMode = resources.configuration.uiMode and
             android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
             android.content.res.Configuration.UI_MODE_NIGHT_YES
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            // Светлая тема → тёмные иконки; тёмная → светлые
             isAppearanceLightStatusBars = !isNightMode
         }
 

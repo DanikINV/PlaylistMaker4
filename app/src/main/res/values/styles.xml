@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Заголовок экрана: YS Display Medium/500, 22sp (по макету YS/Medium/22) -->
+    <!-- Заголовок экрана -->
     <style name="TextAppearance.PlaylistMaker.Title" parent="android:TextAppearance">
         <item name="android:fontFamily">@font/ys_display_medium</item>
         <item name="android:textSize">22sp</item>
@@ -9,7 +9,7 @@
         <item name="android:layout_marginStart">16dp</item>
     </style>
 
-    <!-- Кнопки главного экрана: YS Display Medium/500, 22sp. -->
+    <!-- Кнопки главного экрана -->
     <style name="Widget.PlaylistMaker.Button.Main" parent="Widget.MaterialComponents.Button.UnelevatedButton">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">0dp</item>
@@ -25,7 +25,7 @@
         <item name="android:insetBottom">0dp</item>
     </style>
 
-    <!-- Строки настроек: YS Display Regular/400, 16sp -->
+    <!-- Строки настроек -->
     <style name="Widget.PlaylistMaker.SettingsItem" parent="">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

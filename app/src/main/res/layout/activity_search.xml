@@ -9,7 +9,7 @@
     android:orientation="vertical"
     android:background="@color/white_primary">
 
-    <!-- Toolbar: назад + "Поиск" -->
+    <!-- Toolbar -->
     <LinearLayout
         android:id="@+id/toolbar_layout"
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:clickable="true"
             android:focusable="true"
             android:contentDescription="@string/back"
-            android:src="@drawable/ic_arrow_back"
+            android:src="@drawable/ic_back_arrow_24"
             tools:ignore="TouchTargetSizeCheck" />
 
         <TextView
@@ -48,7 +48,6 @@
         android:background="@drawable/search_field_bg"
         android:paddingHorizontal="10dp">
 
-        <!-- Иконка поиска -->
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
@@ -56,7 +55,6 @@
             android:contentDescription="@null"
             app:tint="@color/hint_color" />
 
-        <!-- EditText и кнопка X в FrameLayout (кнопка поверх поля ввода) -->
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -81,7 +79,6 @@
                 android:importantForAutofill="no"
                 tools:ignore="LabelFor" />
 
-            <!-- Кнопка X поверх поля ввода -->
             <ImageView
                 android:id="@+id/btn_clear_search"
                 android:layout_width="16dp"
