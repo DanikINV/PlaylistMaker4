@@ -39,9 +39,8 @@
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switch_dark_theme"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="61dp"
         android:paddingHorizontal="@dimen/spacing_medium"
-        android:paddingVertical="14dp"
         android:fontFamily="@font/ys_display_regular"
         android:textSize="@dimen/text_size_body"
         android:textColor="@color/black"
@@ -51,18 +50,21 @@
         android:id="@+id/btn_share"
         style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/share_app"
-        app:drawableEndCompat="@drawable/ic_share" />
+        app:drawableEndCompat="@drawable/ic_share"
+        app:drawableTint="@color/settings_icon_color" />
 
     <TextView
         android:id="@+id/btn_support"
         style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/support"
-        app:drawableEndCompat="@drawable/ic_support" />
+        app:drawableEndCompat="@drawable/ic_support"
+        app:drawableTint="@color/settings_icon_color" />
 
     <TextView
         android:id="@+id/btn_user_agreement"
         style="@style/Widget.PlaylistMaker.SettingsItem"
         android:text="@string/user_agreement"
-        app:drawableEndCompat="@drawable/ic_arrow_forward" />
+        app:drawableEndCompat="@drawable/ic_arrow_forward"
+        app:drawableTint="@color/settings_icon_color" />
 
 </LinearLayout>

@@ -46,14 +46,14 @@
         android:layout_marginHorizontal="@dimen/spacing_medium"
         android:layout_marginTop="8dp"
         android:background="@drawable/search_field_bg"
-        android:paddingHorizontal="10dp">
+        android:paddingHorizontal="10dp" >
 
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:src="@drawable/ic_search"
             android:contentDescription="@null"
-            app:tint="@color/hint_color" />
+            app:tint="@color/search_icon_color" />
 
         <FrameLayout
             android:layout_width="0dp"
@@ -89,7 +89,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                app:tint="@color/hint_color"
+                app:tint="@color/search_icon_color"
                 android:visibility="gone" />
 
         </FrameLayout>
