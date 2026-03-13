@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="@dimen/spacing_medium"
+    android:paddingVertical="@dimen/track_item_padding_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:id="@+id/iv_track_artwork"
+        android:layout_width="@dimen/track_artwork_size"
+        android:layout_height="@dimen/track_artwork_size"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/spacing_small"
+        android:layout_marginEnd="@dimen/spacing_small">
+
+        <TextView
+            android:id="@+id/tv_track_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_body"
+            android:fontFamily="@font/ys_display_regular"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tv_track_artist_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/track_secondary_text"
+            android:textSize="@dimen/text_size_secondary"
+            android:fontFamily="@font/ys_display_regular"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_arrow_forward"
+        android:contentDescription="@null"
+        app:tint="@color/settings_icon_color" />
+
+</LinearLayout>
