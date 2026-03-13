@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/blue_primary"
+    android:paddingHorizontal="@dimen/spacing_medium"
+    android:paddingBottom="@dimen/spacing_medium">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textColor="@color/whiteTitle"
+        android:fontFamily="@font/ys_display_medium"
+        android:textSize="@dimen/text_size_title"
+        android:paddingVertical="@dimen/spacing_medium" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_search"
+        style="@style/Widget.PlaylistMaker.Button.Main"
+        android:layout_marginBottom="@dimen/spacing_small"
+        android:text="@string/search"
+        app:icon="@drawable/ic_search"
+        app:iconGravity="textStart"
+        app:iconPadding="@dimen/spacing_small"
+        app:iconTint="@color/blackButton"
+        app:cornerRadius="@dimen/button_corner_radius"
+        app:elevation="0dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_media"
+        style="@style/Widget.PlaylistMaker.Button.Main"
+        android:layout_marginBottom="@dimen/spacing_small"
+        android:text="@string/media_library"
+        app:icon="@drawable/ic_media"
+        app:iconGravity="textStart"
+        app:iconPadding="@dimen/spacing_small"
+        app:iconTint="@color/blackButton"
+        app:cornerRadius="@dimen/button_corner_radius"
+        app:elevation="0dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_settings"
+        style="@style/Widget.PlaylistMaker.Button.Main"
+        android:text="@string/settings"
+        app:icon="@drawable/ic_settings"
+        app:iconGravity="textStart"
+        app:iconPadding="@dimen/spacing_small"
+        app:iconTint="@color/blackButton"
+        app:cornerRadius="@dimen/button_corner_radius"
+        app:elevation="0dp" />
+
+</LinearLayout>
