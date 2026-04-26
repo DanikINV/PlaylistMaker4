@@ -13,4 +13,5 @@
     <color name="hint_color">#AEAFB4</color>
     <color name="search_icon_color">#AEAFB4</color>
     <color name="settings_icon_color">#AEAFB4</color>
+    <color name="track_secondary_text">#AEAFB4</color>
 </resources>
