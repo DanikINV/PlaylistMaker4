@@ -67,15 +67,15 @@
                 android:layout_height="match_parent"
                 android:paddingEnd="24dp"
                 android:background="@null"
+                android:imeOptions="actionDone"
+                android:singleLine="true"
                 android:hint="@string/search_hint"
                 android:textColorHint="@color/hint_color"
                 android:textColor="@color/blackSearch"
                 android:textSize="@dimen/text_size_body"
                 android:fontFamily="@font/ys_display_regular"
                 android:maxLines="1"
-                android:singleLine="true"
                 android:inputType="text"
-                android:imeOptions="actionSearch"
                 android:importantForAutofill="no"
                 tools:ignore="LabelFor" />
 
@@ -92,9 +92,20 @@
                 app:tint="@color/search_icon_color"
                 android:visibility="gone" />
 
+
         </FrameLayout>
 
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/placeholder_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:visibility="gone"
+        android:gravity="center"
+        android:textColor="@color/blackSearch"
+        android:textSize="16sp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_tracks"
