@@ -97,15 +97,33 @@
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/placeholder_message"
+    <LinearLayout
+        android:id="@+id/placeholder_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:visibility="gone"
+        android:orientation="vertical"
         android:gravity="center"
-        android:textColor="@color/blackSearch"
-        android:textSize="16sp"/>
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/placeholder_image"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_placeholder_no_results" />
+
+        <TextView
+            android:id="@+id/placeholder_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:fontFamily="@font/ys_display_regular" />
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_tracks"
