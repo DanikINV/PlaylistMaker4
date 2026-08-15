@@ -19,15 +19,15 @@ import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class SearchActivity : AppCompatActivity() {
 
     private var searchText: String = ""
-    private lateinit var iTunesService: ITunesApi
+    private val iTunesService: ITunesApi = ITunesNetworkClient.service
     private val tracks = ArrayList<Track>()
     private lateinit var adapter: TrackAdapter
+    private lateinit var placeholderContainer: View
+    private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,30 +54,29 @@ class SearchActivity : AppCompatActivity() {
             insets
         }
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://itunes.apple.com")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        iTunesService = retrofit.create(ITunesApi::class.java)
-
         val btnBack = findViewById<ImageView>(R.id.btn_back)
         btnBack.setOnClickListener { finish() }
 
         val etSearch = findViewById<EditText>(R.id.et_search)
         val btnClear = findViewById<ImageView>(R.id.btn_clear_search)
+        placeholderContainer = findViewById(R.id.placeholder_container)
+        placeholderImage = findViewById(R.id.placeholder_image)
         placeholderMessage = findViewById(R.id.placeholder_message)
 
         btnClear.setOnClickListener {
             etSearch.text.clear()
             hideKeyboard(etSearch)
-            tracks.clear()
-            adapter.notifyDataSetChanged()
-            placeholderMessage.visibility = View.GONE
+            hidePlaceholder()
         }
 
         etSearch.doOnTextChanged { text, _, _, _ ->
             btnClear.visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
             searchText = text?.toString() ?: ""
+            if (text.isNullOrEmpty()) {
+                // Баг-фикс: заглушка/результаты должны скрываться и при стирании
+                // запроса через клавиатуру, а не только по кнопке очистки.
+                hidePlaceholder()
+            }
         }
 
         val rvTracks = findViewById<RecyclerView>(R.id.rv_tracks)
@@ -106,26 +105,42 @@ class SearchActivity : AppCompatActivity() {
                         adapter.notifyDataSetChanged()
                     }
                     if (tracks.isEmpty()) {
-                        showMessage(getString(R.string.nothing_found))
+                        showPlaceholder(
+                            text = getString(R.string.nothing_found),
+                            image = R.drawable.ic_placeholder_no_results
+                        )
                     } else {
-                        placeholderMessage.visibility = View.GONE
+                        hidePlaceholder()
                     }
                 } else {
-                    showMessage(getString(R.string.something_went_wrong))
+                    showPlaceholder(
+                        text = getString(R.string.something_went_wrong),
+                        image = R.drawable.ic_placeholder_no_internet
+                    )
                 }
             }
 
             override fun onFailure(call: Call<TracksResponse>, t: Throwable) {
-                showMessage(getString(R.string.something_went_wrong))
+                showPlaceholder(
+                    text = getString(R.string.something_went_wrong),
+                    image = R.drawable.ic_placeholder_no_internet
+                )
             }
         })
     }
 
-    private fun showMessage(text: String) {
-        placeholderMessage.visibility = View.VISIBLE
+    private fun showPlaceholder(text: String, image: Int) {
         tracks.clear()
         adapter.notifyDataSetChanged()
+        placeholderImage.setImageResource(image)
         placeholderMessage.text = text
+        placeholderContainer.visibility = View.VISIBLE
+    }
+
+    private fun hidePlaceholder() {
+        tracks.clear()
+        adapter.notifyDataSetChanged()
+        placeholderContainer.visibility = View.GONE
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
