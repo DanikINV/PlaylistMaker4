@@ -18,4 +18,6 @@
     <string name="something_went_wrong">Что-то пошло не так</string>
     <string name="user_agreement_url">https://yandex.ru/legal/practicum_offer/ru/</string>
     <string name="refresh">Обновить</string>
+    <string name="you_searched">Вы искали</string>
+    <string name="clear_history">Очистить историю</string>
 </resources>
