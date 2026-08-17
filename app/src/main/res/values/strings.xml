@@ -17,4 +17,5 @@
     <string name="nothing_found">Ничего не найдено</string>
     <string name="something_went_wrong">Что-то пошло не так</string>
     <string name="user_agreement_url">https://yandex.ru/legal/practicum_offer/ru/</string>
+    <string name="refresh">Обновить</string>
 </resources>

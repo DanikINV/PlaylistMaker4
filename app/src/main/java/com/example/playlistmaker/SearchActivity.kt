@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -26,9 +27,11 @@ class SearchActivity : AppCompatActivity() {
     private val iTunesService: ITunesApi = ITunesNetworkClient.service
     private val tracks = ArrayList<Track>()
     private lateinit var adapter: TrackAdapter
+    private lateinit var rvTracks: RecyclerView
     private lateinit var placeholderContainer: View
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
+    private lateinit var btnRetry: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,11 +65,18 @@ class SearchActivity : AppCompatActivity() {
         placeholderContainer = findViewById(R.id.placeholder_container)
         placeholderImage = findViewById(R.id.placeholder_image)
         placeholderMessage = findViewById(R.id.placeholder_message)
+        btnRetry = findViewById(R.id.btn_retry)
 
         btnClear.setOnClickListener {
             etSearch.text.clear()
             hideKeyboard(etSearch)
             hidePlaceholder()
+        }
+
+        btnRetry.setOnClickListener {
+            if (etSearch.text.isNotEmpty()) {
+                search(etSearch.text.toString())
+            }
         }
 
         etSearch.doOnTextChanged { text, _, _, _ ->
@@ -79,7 +89,7 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        val rvTracks = findViewById<RecyclerView>(R.id.rv_tracks)
+        rvTracks = findViewById(R.id.rv_tracks)
         rvTracks.layoutManager = LinearLayoutManager(this)
         adapter = TrackAdapter(tracks)
         rvTracks.adapter = adapter
@@ -99,23 +109,24 @@ class SearchActivity : AppCompatActivity() {
         iTunesService.search(query).enqueue(object : Callback<TracksResponse> {
             override fun onResponse(call: Call<TracksResponse>, response: Response<TracksResponse>) {
                 if (response.code() == 200) {
-                    tracks.clear()
-                    if (response.body()?.results?.isNotEmpty() == true) {
-                        tracks.addAll(response.body()?.results!!)
+                    val results = response.body()?.results.orEmpty()
+                    if (results.isNotEmpty()) {
+                        tracks.clear()
+                        tracks.addAll(results)
                         adapter.notifyDataSetChanged()
-                    }
-                    if (tracks.isEmpty()) {
+                        showTracks()
+                    } else {
                         showPlaceholder(
                             text = getString(R.string.nothing_found),
-                            image = R.drawable.ic_placeholder_no_results
+                            image = R.drawable.ic_placeholder_no_results,
+                            showRetry = false
                         )
-                    } else {
-                        hidePlaceholder()
                     }
                 } else {
                     showPlaceholder(
                         text = getString(R.string.something_went_wrong),
-                        image = R.drawable.ic_placeholder_no_internet
+                        image = R.drawable.ic_placeholder_no_internet,
+                        showRetry = true
                     )
                 }
             }
@@ -123,17 +134,25 @@ class SearchActivity : AppCompatActivity() {
             override fun onFailure(call: Call<TracksResponse>, t: Throwable) {
                 showPlaceholder(
                     text = getString(R.string.something_went_wrong),
-                    image = R.drawable.ic_placeholder_no_internet
+                    image = R.drawable.ic_placeholder_no_internet,
+                    showRetry = true
                 )
             }
         })
     }
 
-    private fun showPlaceholder(text: String, image: Int) {
+    private fun showTracks() {
+        placeholderContainer.visibility = View.GONE
+        rvTracks.visibility = View.VISIBLE
+    }
+
+    private fun showPlaceholder(text: String, image: Int, showRetry: Boolean) {
         tracks.clear()
         adapter.notifyDataSetChanged()
+        rvTracks.visibility = View.GONE
         placeholderImage.setImageResource(image)
         placeholderMessage.text = text
+        btnRetry.visibility = if (showRetry) View.VISIBLE else View.GONE
         placeholderContainer.visibility = View.VISIBLE
     }
 
@@ -141,6 +160,7 @@ class SearchActivity : AppCompatActivity() {
         tracks.clear()
         adapter.notifyDataSetChanged()
         placeholderContainer.visibility = View.GONE
+        rvTracks.visibility = View.VISIBLE
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
