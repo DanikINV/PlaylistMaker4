@@ -26,12 +26,21 @@ class SearchActivity : AppCompatActivity() {
     private var searchText: String = ""
     private val iTunesService: ITunesApi = ITunesNetworkClient.service
     private val tracks = ArrayList<Track>()
+    private val historyTracks = ArrayList<Track>()
     private lateinit var adapter: TrackAdapter
+    private lateinit var historyAdapter: TrackAdapter
+    private lateinit var searchHistory: SearchHistory
+
+    private lateinit var etSearch: EditText
+    private lateinit var resultsContainer: View
     private lateinit var rvTracks: RecyclerView
     private lateinit var placeholderContainer: View
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
     private lateinit var btnRetry: Button
+    private lateinit var historyContainer: View
+    private lateinit var rvHistory: RecyclerView
+    private lateinit var btnClearHistory: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,20 +66,36 @@ class SearchActivity : AppCompatActivity() {
             insets
         }
 
+        searchHistory = SearchHistory(getSharedPreferences(PREFS_NAME, MODE_PRIVATE))
+
         val btnBack = findViewById<ImageView>(R.id.btn_back)
         btnBack.setOnClickListener { finish() }
 
-        val etSearch = findViewById<EditText>(R.id.et_search)
+        etSearch = findViewById(R.id.et_search)
         val btnClear = findViewById<ImageView>(R.id.btn_clear_search)
+        resultsContainer = findViewById(R.id.results_container)
         placeholderContainer = findViewById(R.id.placeholder_container)
         placeholderImage = findViewById(R.id.placeholder_image)
         placeholderMessage = findViewById(R.id.placeholder_message)
         btnRetry = findViewById(R.id.btn_retry)
+        historyContainer = findViewById(R.id.history_container)
+        rvHistory = findViewById(R.id.rv_history)
+        btnClearHistory = findViewById(R.id.btn_clear_history)
+
+        rvTracks = findViewById(R.id.rv_tracks)
+        rvTracks.layoutManager = LinearLayoutManager(this)
+        adapter = TrackAdapter(tracks) { track -> onTrackClicked(track) }
+        rvTracks.adapter = adapter
+
+        rvHistory.layoutManager = LinearLayoutManager(this)
+        historyAdapter = TrackAdapter(historyTracks) { track -> onTrackClicked(track) }
+        rvHistory.adapter = historyAdapter
 
         btnClear.setOnClickListener {
             etSearch.text.clear()
             hideKeyboard(etSearch)
             hidePlaceholder()
+            updateHistoryVisibility()
         }
 
         btnRetry.setOnClickListener {
@@ -79,20 +104,25 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
+        btnClearHistory.setOnClickListener {
+            searchHistory.clearHistory()
+            historyTracks.clear()
+            historyAdapter.notifyDataSetChanged()
+            updateHistoryVisibility()
+        }
+
         etSearch.doOnTextChanged { text, _, _, _ ->
             btnClear.visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
             searchText = text?.toString() ?: ""
             if (text.isNullOrEmpty()) {
-                // Баг-фикс: заглушка/результаты должны скрываться и при стирании
-                // запроса через клавиатуру, а не только по кнопке очистки.
                 hidePlaceholder()
             }
+            updateHistoryVisibility()
         }
 
-        rvTracks = findViewById(R.id.rv_tracks)
-        rvTracks.layoutManager = LinearLayoutManager(this)
-        adapter = TrackAdapter(tracks)
-        rvTracks.adapter = adapter
+        etSearch.setOnFocusChangeListener { _, _ ->
+            updateHistoryVisibility()
+        }
 
         etSearch.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -102,6 +132,31 @@ class SearchActivity : AppCompatActivity() {
                 true
             }
             false
+        }
+        updateHistoryVisibility()
+    }
+
+    private fun onTrackClicked(track: Track) {
+        searchHistory.addTrack(track)
+        // TODO: soon...
+    }
+
+    private fun updateHistoryVisibility() {
+        val query = etSearch.text?.toString().orEmpty()
+        val shouldShowHistory = etSearch.hasFocus() && query.isEmpty()
+
+        if (shouldShowHistory) {
+            historyTracks.clear()
+            historyTracks.addAll(searchHistory.getHistory())
+            historyAdapter.notifyDataSetChanged()
+        }
+
+        if (shouldShowHistory && historyTracks.isNotEmpty()) {
+            historyContainer.visibility = View.VISIBLE
+            resultsContainer.visibility = View.GONE
+        } else {
+            historyContainer.visibility = View.GONE
+            resultsContainer.visibility = View.VISIBLE
         }
     }
 
@@ -171,7 +226,7 @@ class SearchActivity : AppCompatActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         searchText = savedInstanceState.getString(SEARCH_TEXT_KEY, "")
-        findViewById<EditText>(R.id.et_search).setText(searchText)
+        etSearch.setText(searchText)
     }
 
     private fun hideKeyboard(view: View) {
@@ -182,5 +237,6 @@ class SearchActivity : AppCompatActivity() {
 
     companion object {
         private const val SEARCH_TEXT_KEY = "SEARCH_TEXT"
+        private const val PREFS_NAME = "playlist_maker_prefs"
     }
 }
