@@ -11,4 +11,5 @@
     <dimen name="track_artwork_corner_radius">2dp</dimen>
     <dimen name="track_item_padding_vertical">8dp</dimen>
     <dimen name="text_size_secondary">12sp</dimen>
+    <dimen name="player_artwork_corner_radius">8dp</dimen>
 </resources>

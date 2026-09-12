@@ -1,6 +1,7 @@
 package com.example.playlistmaker
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -17,6 +18,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -25,21 +27,17 @@ class SearchActivity : AppCompatActivity() {
 
     private var searchText: String = ""
     private val iTunesService: ITunesApi = ITunesNetworkClient.service
-    private val tracks = ArrayList<Track>()
-    private val historyTracks = ArrayList<Track>()
-    private lateinit var adapter: TrackAdapter
-    private lateinit var historyAdapter: TrackAdapter
     private lateinit var searchHistory: SearchHistory
+    private val displayedTracks = ArrayList<Track>()
+    private lateinit var adapter: TrackAdapter
 
     private lateinit var etSearch: EditText
-    private lateinit var resultsContainer: View
     private lateinit var rvTracks: RecyclerView
     private lateinit var placeholderContainer: View
     private lateinit var placeholderImage: ImageView
     private lateinit var placeholderMessage: TextView
     private lateinit var btnRetry: Button
-    private lateinit var historyContainer: View
-    private lateinit var rvHistory: RecyclerView
+    private lateinit var tvHistoryTitle: TextView
     private lateinit var btnClearHistory: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,23 +71,17 @@ class SearchActivity : AppCompatActivity() {
 
         etSearch = findViewById(R.id.et_search)
         val btnClear = findViewById<ImageView>(R.id.btn_clear_search)
-        resultsContainer = findViewById(R.id.results_container)
         placeholderContainer = findViewById(R.id.placeholder_container)
         placeholderImage = findViewById(R.id.placeholder_image)
         placeholderMessage = findViewById(R.id.placeholder_message)
         btnRetry = findViewById(R.id.btn_retry)
-        historyContainer = findViewById(R.id.history_container)
-        rvHistory = findViewById(R.id.rv_history)
+        tvHistoryTitle = findViewById(R.id.tv_history_title)
         btnClearHistory = findViewById(R.id.btn_clear_history)
 
         rvTracks = findViewById(R.id.rv_tracks)
         rvTracks.layoutManager = LinearLayoutManager(this)
-        adapter = TrackAdapter(tracks) { track -> onTrackClicked(track) }
+        adapter = TrackAdapter(displayedTracks) { track -> onTrackClicked(track) }
         rvTracks.adapter = adapter
-
-        rvHistory.layoutManager = LinearLayoutManager(this)
-        historyAdapter = TrackAdapter(historyTracks) { track -> onTrackClicked(track) }
-        rvHistory.adapter = historyAdapter
 
         btnClear.setOnClickListener {
             etSearch.text.clear()
@@ -106,9 +98,11 @@ class SearchActivity : AppCompatActivity() {
 
         btnClearHistory.setOnClickListener {
             searchHistory.clearHistory()
-            historyTracks.clear()
-            historyAdapter.notifyDataSetChanged()
-            updateHistoryVisibility()
+            setTracks(emptyList())
+            tvHistoryTitle.visibility = View.GONE
+            btnClearHistory.visibility = View.GONE
+            placeholderContainer.visibility = View.GONE
+            rvTracks.visibility = View.VISIBLE
         }
 
         etSearch.doOnTextChanged { text, _, _, _ ->
@@ -133,31 +127,45 @@ class SearchActivity : AppCompatActivity() {
             }
             false
         }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
         updateHistoryVisibility()
     }
 
     private fun onTrackClicked(track: Track) {
         searchHistory.addTrack(track)
-        // TODO: soon...
+        val intent = Intent(this, PlayerActivity::class.java).apply {
+            putExtra(PlayerActivity.EXTRA_TRACK, Gson().toJson(track))
+        }
+        startActivity(intent)
     }
 
     private fun updateHistoryVisibility() {
         val query = etSearch.text?.toString().orEmpty()
-        val shouldShowHistory = etSearch.hasFocus() && query.isEmpty()
+        val hasFocusAndEmpty = etSearch.hasFocus() && query.isEmpty()
 
-        if (shouldShowHistory) {
-            historyTracks.clear()
-            historyTracks.addAll(searchHistory.getHistory())
-            historyAdapter.notifyDataSetChanged()
+        if (!hasFocusAndEmpty) {
+            tvHistoryTitle.visibility = View.GONE
+            btnClearHistory.visibility = View.GONE
+            return
         }
 
-        if (shouldShowHistory && historyTracks.isNotEmpty()) {
-            historyContainer.visibility = View.VISIBLE
-            resultsContainer.visibility = View.GONE
-        } else {
-            historyContainer.visibility = View.GONE
-            resultsContainer.visibility = View.VISIBLE
-        }
+        val history = searchHistory.getHistory()
+        setTracks(history)
+        val showHistoryUi = history.isNotEmpty()
+        tvHistoryTitle.visibility = if (showHistoryUi) View.VISIBLE else View.GONE
+        btnClearHistory.visibility = if (showHistoryUi) View.VISIBLE else View.GONE
+        placeholderContainer.visibility = View.GONE
+        rvTracks.visibility = View.VISIBLE
+    }
+
+    private fun setTracks(newTracks: List<Track>) {
+        displayedTracks.clear()
+        displayedTracks.addAll(newTracks)
+        adapter.notifyDataSetChanged()
     }
 
     private fun search(query: String) {
@@ -166,9 +174,7 @@ class SearchActivity : AppCompatActivity() {
                 if (response.code() == 200) {
                     val results = response.body()?.results.orEmpty()
                     if (results.isNotEmpty()) {
-                        tracks.clear()
-                        tracks.addAll(results)
-                        adapter.notifyDataSetChanged()
+                        setTracks(results)
                         showTracks()
                     } else {
                         showPlaceholder(
@@ -197,13 +203,16 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun showTracks() {
+        tvHistoryTitle.visibility = View.GONE
+        btnClearHistory.visibility = View.GONE
         placeholderContainer.visibility = View.GONE
         rvTracks.visibility = View.VISIBLE
     }
 
     private fun showPlaceholder(text: String, image: Int, showRetry: Boolean) {
-        tracks.clear()
-        adapter.notifyDataSetChanged()
+        setTracks(emptyList())
+        tvHistoryTitle.visibility = View.GONE
+        btnClearHistory.visibility = View.GONE
         rvTracks.visibility = View.GONE
         placeholderImage.setImageResource(image)
         placeholderMessage.text = text
@@ -212,8 +221,7 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun hidePlaceholder() {
-        tracks.clear()
-        adapter.notifyDataSetChanged()
+        setTracks(emptyList())
         placeholderContainer.visibility = View.GONE
         rvTracks.visibility = View.VISIBLE
     }
