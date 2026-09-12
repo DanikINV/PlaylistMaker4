@@ -1,7 +1,10 @@
 package com.example.playlistmaker
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Track(
     @SerializedName("trackId")
     val trackId: Long,
@@ -20,8 +23,10 @@ data class Track(
     @SerializedName("primaryGenreName")
     val primaryGenreName: String? = null,
     @SerializedName("country")
-    val country: String? = null
-) {
+    val country: String? = null,
+    @SerializedName("previewUrl")
+    val previewUrl: String? = null
+) : Parcelable {
     fun getCoverArtwork(): String? =
         artworkUrl100?.replaceAfterLast('/', "512x512bb.jpg")
 }
