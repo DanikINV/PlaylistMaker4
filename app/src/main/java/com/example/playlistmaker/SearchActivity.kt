@@ -3,12 +3,15 @@ package com.example.playlistmaker
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,10 +21,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.constraintlayout.widget.ConstraintLayout
 
 class SearchActivity : AppCompatActivity() {
 
@@ -39,6 +42,16 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var btnRetry: Button
     private lateinit var tvHistoryTitle: TextView
     private lateinit var btnClearHistory: Button
+    private lateinit var progressBar: ProgressBar
+
+    private val searchDebounceHandler = Handler(Looper.getMainLooper())
+    private val searchRunnable = Runnable {
+        val query = etSearch.text?.toString().orEmpty()
+        if (query.isNotEmpty()) {
+            search(query)
+        }
+    }
+    private var currentSearchCall: Call<TracksResponse>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +90,7 @@ class SearchActivity : AppCompatActivity() {
         btnRetry = findViewById(R.id.btn_retry)
         tvHistoryTitle = findViewById(R.id.tv_history_title)
         btnClearHistory = findViewById(R.id.btn_clear_history)
+        progressBar = findViewById(R.id.progress_bar)
 
         rvTracks = findViewById(R.id.rv_tracks)
         rvTracks.layoutManager = LinearLayoutManager(this)
@@ -84,6 +98,8 @@ class SearchActivity : AppCompatActivity() {
         rvTracks.adapter = adapter
 
         btnClear.setOnClickListener {
+            searchDebounceHandler.removeCallbacks(searchRunnable)
+            currentSearchCall?.cancel()
             etSearch.text.clear()
             hideKeyboard(etSearch)
             hidePlaceholder()
@@ -108,8 +124,13 @@ class SearchActivity : AppCompatActivity() {
         etSearch.doOnTextChanged { text, _, _, _ ->
             btnClear.visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
             searchText = text?.toString() ?: ""
+
+            searchDebounceHandler.removeCallbacks(searchRunnable)
             if (text.isNullOrEmpty()) {
+                currentSearchCall?.cancel()
                 hidePlaceholder()
+            } else {
+                searchDebounceHandler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_DELAY_MS)
             }
             updateHistoryVisibility()
         }
@@ -121,6 +142,7 @@ class SearchActivity : AppCompatActivity() {
         etSearch.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 if (etSearch.text.isNotEmpty()) {
+                    searchDebounceHandler.removeCallbacks(searchRunnable)
                     search(etSearch.text.toString())
                 }
                 true
@@ -138,7 +160,7 @@ class SearchActivity : AppCompatActivity() {
     private fun onTrackClicked(track: Track) {
         searchHistory.addTrack(track)
         val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra(PlayerActivity.EXTRA_TRACK, Gson().toJson(track))
+            putExtra(PlayerActivity.EXTRA_TRACK, track)
         }
         startActivity(intent)
     }
@@ -158,6 +180,7 @@ class SearchActivity : AppCompatActivity() {
         val showHistoryUi = history.isNotEmpty()
         tvHistoryTitle.visibility = if (showHistoryUi) View.VISIBLE else View.GONE
         btnClearHistory.visibility = if (showHistoryUi) View.VISIBLE else View.GONE
+        setHistoryLayoutMode(showHistoryUi)
         placeholderContainer.visibility = View.GONE
         rvTracks.visibility = View.VISIBLE
     }
@@ -169,8 +192,14 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun search(query: String) {
-        iTunesService.search(query).enqueue(object : Callback<TracksResponse> {
+        currentSearchCall?.cancel()
+        showLoading()
+        val call = iTunesService.search(query)
+        currentSearchCall = call
+        call.enqueue(object : Callback<TracksResponse> {
             override fun onResponse(call: Call<TracksResponse>, response: Response<TracksResponse>) {
+                if (call.isCanceled) return
+                progressBar.visibility = View.GONE
                 if (response.code() == 200) {
                     val results = response.body()?.results.orEmpty()
                     if (results.isNotEmpty()) {
@@ -193,6 +222,8 @@ class SearchActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<TracksResponse>, t: Throwable) {
+                if (call.isCanceled) return
+                progressBar.visibility = View.GONE
                 showPlaceholder(
                     text = getString(R.string.something_went_wrong),
                     image = R.drawable.ic_placeholder_no_internet,
@@ -202,10 +233,19 @@ class SearchActivity : AppCompatActivity() {
         })
     }
 
+    private fun showLoading() {
+        tvHistoryTitle.visibility = View.GONE
+        btnClearHistory.visibility = View.GONE
+        placeholderContainer.visibility = View.GONE
+        rvTracks.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+    }
+
     private fun showTracks() {
         tvHistoryTitle.visibility = View.GONE
         btnClearHistory.visibility = View.GONE
         placeholderContainer.visibility = View.GONE
+        progressBar.visibility = View.GONE
         rvTracks.visibility = View.VISIBLE
     }
 
@@ -214,6 +254,7 @@ class SearchActivity : AppCompatActivity() {
         tvHistoryTitle.visibility = View.GONE
         btnClearHistory.visibility = View.GONE
         rvTracks.visibility = View.GONE
+        progressBar.visibility = View.GONE
         placeholderImage.setImageResource(image)
         placeholderMessage.text = text
         btnRetry.visibility = if (showRetry) View.VISIBLE else View.GONE
@@ -223,6 +264,7 @@ class SearchActivity : AppCompatActivity() {
     private fun hidePlaceholder() {
         setTracks(emptyList())
         placeholderContainer.visibility = View.GONE
+        progressBar.visibility = View.GONE
         rvTracks.visibility = View.VISIBLE
     }
 
@@ -237,14 +279,41 @@ class SearchActivity : AppCompatActivity() {
         etSearch.setText(searchText)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        searchDebounceHandler.removeCallbacks(searchRunnable)
+        currentSearchCall?.cancel()
+    }
+
     private fun hideKeyboard(view: View) {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(view.windowToken, 0)
         view.clearFocus()
     }
 
+    private fun setHistoryLayoutMode(compact: Boolean) {
+        val recyclerParams = rvTracks.layoutParams as ConstraintLayout.LayoutParams
+        val buttonParams = btnClearHistory.layoutParams as ConstraintLayout.LayoutParams
+
+        if (compact) {
+            recyclerParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+            recyclerParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            buttonParams.topToBottom = R.id.rv_tracks
+            buttonParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+        } else {
+            recyclerParams.height = 0
+            recyclerParams.bottomToTop = R.id.btn_clear_history
+            buttonParams.topToBottom = ConstraintLayout.LayoutParams.UNSET
+            buttonParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+        }
+
+        rvTracks.layoutParams = recyclerParams
+        btnClearHistory.layoutParams = buttonParams
+    }
+
     companion object {
         private const val SEARCH_TEXT_KEY = "SEARCH_TEXT"
         private const val PREFS_NAME = "playlist_maker_prefs"
+        private const val SEARCH_DEBOUNCE_DELAY_MS = 2000L
     }
 }
