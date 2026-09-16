@@ -1,6 +1,10 @@
 package com.example.playlistmaker
 
+import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -12,11 +16,18 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class PlayerActivity : AppCompatActivity() {
+
+    private var mediaPlayer: MediaPlayer? = null
+    private var playerState = STATE_DEFAULT
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private lateinit var btnPlay: ImageView
+    private lateinit var tvProgress: TextView
+    private val timeFormat = SimpleDateFormat("mm:ss", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,25 +49,32 @@ class PlayerActivity : AppCompatActivity() {
             insets
         }
 
+        btnPlay = findViewById(R.id.btn_play)
+        tvProgress = findViewById(R.id.tv_progress)
+
         findViewById<ImageView>(R.id.btn_back).setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
 
-        val trackJson = intent.getStringExtra(EXTRA_TRACK)
-        val track = trackJson?.let { Gson().fromJson(it, Track::class.java) } ?: run {
+        val track = intent.getParcelableExtra<Track>(EXTRA_TRACK) ?: run {
             finish()
             return
         }
 
         bindTrack(track)
+        preparePlayer(track.previewUrl)
+
+        btnPlay.setOnClickListener {
+            playbackControl()
+        }
     }
 
     private fun bindTrack(track: Track) {
         findViewById<TextView>(R.id.tv_track_name).text = track.trackName
         findViewById<TextView>(R.id.tv_artist_name).text = track.artistName
 
-        val timeFormat = SimpleDateFormat("mm:ss", Locale.getDefault())
-        findViewById<TextView>(R.id.tv_duration_value).text = timeFormat.format(track.trackTime)
+        val durationFormat = SimpleDateFormat("mm:ss", Locale.getDefault())
+        findViewById<TextView>(R.id.tv_duration_value).text = durationFormat.format(track.trackTime)
 
         bindOptionalRow(R.id.row_album, R.id.tv_album_value, track.collectionName)
         bindOptionalRow(R.id.row_year, R.id.tv_year_value, extractYear(track.releaseDate))
@@ -73,11 +91,11 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun bindOptionalRow(rowId: Int, valueViewId: Int, value: String?) {
-        val row = findViewById<android.view.View>(rowId)
+        val row = findViewById<View>(rowId)
         if (value.isNullOrBlank()) {
-            row.visibility = android.view.View.GONE
+            row.visibility = View.GONE
         } else {
-            row.visibility = android.view.View.VISIBLE
+            row.visibility = View.VISIBLE
             findViewById<TextView>(valueViewId).text = value
         }
     }
@@ -87,7 +105,88 @@ class PlayerActivity : AppCompatActivity() {
         return releaseDate.substring(0, 4)
     }
 
+    private fun preparePlayer(previewUrl: String?) {
+        if (previewUrl.isNullOrBlank()) {
+            btnPlay.isEnabled = false
+            return
+        }
+
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(previewUrl)
+            prepareAsync()
+
+            setOnPreparedListener {
+                playerState = STATE_PREPARED
+            }
+
+            setOnCompletionListener {
+                mainHandler.removeCallbacks(progressUpdateRunnable)
+                tvProgress.text = getString(R.string.default_progress)
+                setPlayButtonIcon(isPlaying = false)
+                playerState = STATE_PREPARED
+            }
+        }
+    }
+
+    private fun playbackControl() {
+        when (playerState) {
+            STATE_PLAYING -> pausePlayer()
+            STATE_PREPARED, STATE_PAUSED -> startPlayer()
+            else -> Unit
+        }
+    }
+
+    private fun startPlayer() {
+        mediaPlayer?.start()
+        setPlayButtonIcon(isPlaying = true)
+        playerState = STATE_PLAYING
+        mainHandler.post(progressUpdateRunnable)
+    }
+
+    private fun pausePlayer() {
+        mediaPlayer?.pause()
+        setPlayButtonIcon(isPlaying = false)
+        playerState = STATE_PAUSED
+        mainHandler.removeCallbacks(progressUpdateRunnable)
+    }
+
+    private fun setPlayButtonIcon(isPlaying: Boolean) {
+        btnPlay.setImageResource(
+            if (isPlaying) R.drawable.ic_pause_button else R.drawable.ic_play_button
+        )
+    }
+
+    private val progressUpdateRunnable = object : Runnable {
+        override fun run() {
+            mediaPlayer?.let {
+                tvProgress.text = timeFormat.format(it.currentPosition)
+            }
+            mainHandler.postDelayed(this, PROGRESS_UPDATE_DELAY_MS)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (playerState == STATE_PLAYING) {
+            pausePlayer()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainHandler.removeCallbacks(progressUpdateRunnable)
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
     companion object {
         const val EXTRA_TRACK = "EXTRA_TRACK"
+
+        private const val STATE_DEFAULT = 0
+        private const val STATE_PREPARED = 1
+        private const val STATE_PLAYING = 2
+        private const val STATE_PAUSED = 3
+
+        private const val PROGRESS_UPDATE_DELAY_MS = 300L
     }
 }
