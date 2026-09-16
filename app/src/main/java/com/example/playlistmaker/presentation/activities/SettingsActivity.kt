@@ -1,8 +1,10 @@
-package com.example.playlistmaker
+package com.example.playlistmaker.presentation.activities
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -13,6 +15,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.playlistmaker.R
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -23,14 +26,14 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         val isNightMode = resources.configuration.uiMode and
-            android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
-            android.content.res.Configuration.UI_MODE_NIGHT_YES
+            Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = !isNightMode
         }
 
-        val rootView = findViewById<android.view.View>(R.id.root_layout)
+        val rootView = findViewById<View>(R.id.root_layout)
         val toolbarLayout = findViewById<LinearLayout>(R.id.toolbar_layout)
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
@@ -78,7 +81,12 @@ class SettingsActivity : AppCompatActivity() {
 
         val btnUserAgreement = findViewById<TextView>(R.id.btn_user_agreement)
         btnUserAgreement.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.user_agreement_url))))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(getString(R.string.user_agreement_url))
+                )
+            )
         }
     }
 }
