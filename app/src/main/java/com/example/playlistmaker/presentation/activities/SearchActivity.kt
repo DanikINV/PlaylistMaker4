@@ -99,7 +99,8 @@ class SearchActivity : AppCompatActivity() {
         }
 
         searchInteractor = Creator.provideSearchInteractor()
-        historyInteractor = Creator.provideHistoryInteractor(applicationContext)
+        historyInteractor =
+            Creator.provideHistoryInteractor(applicationContext)
 
         val btnBack = findViewById<ImageView>(R.id.btn_back)
 

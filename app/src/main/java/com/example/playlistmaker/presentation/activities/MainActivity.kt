@@ -20,9 +20,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        settingsInteractor = Creator.provideSettingsInteractor(
-            applicationContext
-        )
+        settingsInteractor =
+            Creator.provideSettingsInteractor(applicationContext)
 
         val isDarkMode = settingsInteractor.isDarkTheme()
 

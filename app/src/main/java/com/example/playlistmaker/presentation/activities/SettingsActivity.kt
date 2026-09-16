@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -16,75 +15,173 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.playlistmaker.R
+import com.example.playlistmaker.domain.interactors.SettingsInteractor
+import com.example.playlistmaker.presentation.Creator
 
 class SettingsActivity : AppCompatActivity() {
 
+    private lateinit var settingsInteractor: SettingsInteractor
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        settingsInteractor =
+            Creator.provideSettingsInteractor(applicationContext)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_settings)
 
         val isNightMode = resources.configuration.uiMode and
-            Configuration.UI_MODE_NIGHT_MASK ==
-            Configuration.UI_MODE_NIGHT_YES
+                Configuration.UI_MODE_NIGHT_MASK ==
+                Configuration.UI_MODE_NIGHT_YES
 
-        WindowInsetsControllerCompat(window, window.decorView).apply {
+        WindowInsetsControllerCompat(
+            window,
+            window.decorView
+        ).apply {
             isAppearanceLightStatusBars = !isNightMode
         }
 
-        val rootView = findViewById<View>(R.id.root_layout)
-        val toolbarLayout = findViewById<LinearLayout>(R.id.toolbar_layout)
+        val rootView = findViewById<android.view.View>(
+            R.id.root_layout
+        )
 
-        ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        val toolbarLayout = findViewById<LinearLayout>(
+            R.id.toolbar_layout
+        )
+
+        ViewCompat.setOnApplyWindowInsetsListener(
+            rootView
+        ) { _, insets ->
+
+            val systemBars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars()
+            )
+
             val density = resources.displayMetrics.density
             val spacing = (16 * density).toInt()
-            toolbarLayout.setPadding(spacing, systemBars.top + spacing, spacing, spacing)
+
+            toolbarLayout.setPadding(
+                spacing,
+                systemBars.top + spacing,
+                spacing,
+                spacing
+            )
+
             insets
         }
 
-        val backButton = findViewById<ImageView>(R.id.btn_back)
-        backButton.setOnClickListener { finish() }
+        val backButton = findViewById<ImageView>(
+            R.id.btn_back
+        )
 
-        val switchDarkTheme = findViewById<SwitchCompat>(R.id.switch_dark_theme)
-        val prefs = getSharedPreferences("playlist_maker_prefs", MODE_PRIVATE)
-        switchDarkTheme.isChecked = prefs.getBoolean("dark_theme", false)
+        backButton.setOnClickListener {
+            finish()
+        }
 
+        val switchDarkTheme = findViewById<SwitchCompat>(
+            R.id.switch_dark_theme
+        )
+
+        // Получаем текущее состояние темы через Interactor
+        switchDarkTheme.isChecked =
+            settingsInteractor.isDarkTheme()
+
+        // Сохраняем состояние темы через Interactor
         switchDarkTheme.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("dark_theme", isChecked).apply()
+
+            settingsInteractor.saveDarkTheme(
+                isChecked
+            )
+
             AppCompatDelegate.setDefaultNightMode(
-                if (isChecked) AppCompatDelegate.MODE_NIGHT_YES
-                else AppCompatDelegate.MODE_NIGHT_NO
+                if (isChecked) {
+                    AppCompatDelegate.MODE_NIGHT_YES
+                } else {
+                    AppCompatDelegate.MODE_NIGHT_NO
+                }
             )
         }
 
-        val btnShare = findViewById<TextView>(R.id.btn_share)
+        val btnShare = findViewById<TextView>(
+            R.id.btn_share
+        )
+
         btnShare.setOnClickListener {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+
+            val shareIntent = Intent(
+                Intent.ACTION_SEND
+            ).apply {
+
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, getString(R.string.share_message))
+
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    getString(R.string.share_message)
+                )
             }
-            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_app)))
+
+            startActivity(
+                Intent.createChooser(
+                    shareIntent,
+                    getString(R.string.share_app)
+                )
+            )
         }
 
-        val btnSupport = findViewById<TextView>(R.id.btn_support)
+        val btnSupport = findViewById<TextView>(
+            R.id.btn_support
+        )
+
         btnSupport.setOnClickListener {
-            val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+
+            val emailIntent = Intent(
+                Intent.ACTION_SENDTO
+            ).apply {
+
                 data = Uri.parse("mailto:")
-                putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.support_email)))
-                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.support_subject))
-                putExtra(Intent.EXTRA_TEXT, getString(R.string.support_body))
+
+                putExtra(
+                    Intent.EXTRA_EMAIL,
+                    arrayOf(
+                        getString(
+                            R.string.support_email
+                        )
+                    )
+                )
+
+                putExtra(
+                    Intent.EXTRA_SUBJECT,
+                    getString(
+                        R.string.support_subject
+                    )
+                )
+
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    getString(
+                        R.string.support_body
+                    )
+                )
             }
+
             startActivity(emailIntent)
         }
 
-        val btnUserAgreement = findViewById<TextView>(R.id.btn_user_agreement)
+        val btnUserAgreement = findViewById<TextView>(
+            R.id.btn_user_agreement
+        )
+
         btnUserAgreement.setOnClickListener {
+
             startActivity(
                 Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse(getString(R.string.user_agreement_url))
+                    Uri.parse(
+                        getString(
+                            R.string.user_agreement_url
+                        )
+                    )
                 )
             )
         }

@@ -16,8 +16,9 @@ import com.example.playlistmaker.domain.interactors.SettingsInteractorImpl
 
 object Creator {
 
-    fun provideSearchInteractor(): SearchInteractor {
+    private const val PREFS_NAME = "playlist_maker_prefs"
 
+    fun provideSearchInteractor(): SearchInteractor {
         val repository = SearchRepositoryImpl(
             ITunesNetworkClient.service
         )
@@ -60,6 +61,4 @@ object Creator {
 
         return SettingsInteractorImpl(repository)
     }
-
-    private const val PREFS_NAME = "playlist_maker_prefs"
 }
