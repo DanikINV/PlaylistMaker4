@@ -1,10 +1,12 @@
-package com.example.playlistmaker
+package com.example.playlistmaker.presentation.activities
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.playlistmaker.R
 
 class MediaLibraryActivity : AppCompatActivity() {
 
@@ -15,7 +17,7 @@ class MediaLibraryActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_media_library)
 
-        val rootView = findViewById<android.view.View>(R.id.root_layout)
+        val rootView = findViewById<View>(R.id.root_layout)
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
