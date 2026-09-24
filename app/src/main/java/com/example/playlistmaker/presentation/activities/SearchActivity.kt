@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -21,21 +19,22 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.playlistmaker.R
-import com.example.playlistmaker.domain.interactors.HistoryInteractor
-import com.example.playlistmaker.domain.interactors.SearchConsumer
-import com.example.playlistmaker.domain.interactors.SearchInteractor
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.presentation.adapters.TrackAdapter
 import com.example.playlistmaker.presentation.model.TrackParcelable
+import com.example.playlistmaker.presentation.model.SearchContent
+import com.example.playlistmaker.presentation.model.SearchScreenState
+import com.example.playlistmaker.presentation.model.SearchViewModel
+import com.example.playlistmaker.presentation.model.SearchViewModelFactory
 
 class SearchActivity : AppCompatActivity() {
 
-    private lateinit var searchInteractor: SearchInteractor
-    private lateinit var historyInteractor: HistoryInteractor
+    private lateinit var viewModel: SearchViewModel
 
     private lateinit var etSearch: EditText
     private lateinit var rvTracks: RecyclerView
@@ -48,45 +47,52 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
 
     private val displayedTracks = ArrayList<Track>()
+
     private lateinit var adapter: TrackAdapter
-
-    private var searchText: String = ""
-
-    private val searchDebounceHandler = Handler(Looper.getMainLooper())
-
-    private val searchRunnable = Runnable {
-        val query = etSearch.text?.toString().orEmpty()
-
-        if (query.isNotEmpty()) {
-            search(query)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(
+            window,
+            false
+        )
+
         setContentView(R.layout.activity_search)
 
-        val isNightMode = resources.configuration.uiMode and
-                Configuration.UI_MODE_NIGHT_MASK ==
-                Configuration.UI_MODE_NIGHT_YES
+        val isNightMode =
+            resources.configuration.uiMode and
+                    Configuration.UI_MODE_NIGHT_MASK ==
+                    Configuration.UI_MODE_NIGHT_YES
 
-        WindowInsetsControllerCompat(window, window.decorView).apply {
+        WindowInsetsControllerCompat(
+            window,
+            window.decorView
+        ).apply {
             isAppearanceLightStatusBars = !isNightMode
         }
 
-        val rootView = findViewById<View>(R.id.root_layout)
-        val toolbarLayout = findViewById<View>(R.id.toolbar_layout)
+        val rootView = findViewById<View>(
+            R.id.root_layout
+        )
 
-        ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, insets ->
+        val toolbarLayout = findViewById<View>(
+            R.id.toolbar_layout
+        )
+
+        ViewCompat.setOnApplyWindowInsetsListener(
+            rootView
+        ) { _, insets ->
 
             val systemBars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars()
             )
 
-            val density = resources.displayMetrics.density
-            val spacing = (16 * density).toInt()
+            val density =
+                resources.displayMetrics.density
+
+            val spacing =
+                (16 * density).toInt()
 
             toolbarLayout.setPadding(
                 spacing,
@@ -98,20 +104,36 @@ class SearchActivity : AppCompatActivity() {
             insets
         }
 
-        searchInteractor = Creator.provideSearchInteractor()
-        historyInteractor =
-            Creator.provideHistoryInteractor(applicationContext)
+        val factory = SearchViewModelFactory(
+            searchInteractor =
+                Creator.provideSearchInteractor(),
+            historyInteractor =
+                Creator.provideHistoryInteractor(
+                    applicationContext
+                )
+        )
 
-        val btnBack = findViewById<ImageView>(R.id.btn_back)
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[SearchViewModel::class.java]
 
-        btnBack.setOnClickListener {
+        initViews()
+        initRecyclerView()
+        initListeners()
+        observeViewModel()
+    }
+
+    private fun initViews() {
+
+        findViewById<ImageView>(
+            R.id.btn_back
+        ).setOnClickListener {
             finish()
         }
 
-        etSearch = findViewById(R.id.et_search)
-
-        val btnClear = findViewById<ImageView>(
-            R.id.btn_clear_search
+        etSearch = findViewById(
+            R.id.et_search
         )
 
         placeholderContainer = findViewById(
@@ -126,7 +148,9 @@ class SearchActivity : AppCompatActivity() {
             R.id.placeholder_message
         )
 
-        btnRetry = findViewById(R.id.btn_retry)
+        btnRetry = findViewById(
+            R.id.btn_retry
+        )
 
         tvHistoryTitle = findViewById(
             R.id.tv_history_title
@@ -140,98 +164,68 @@ class SearchActivity : AppCompatActivity() {
             R.id.progress_bar
         )
 
-        rvTracks = findViewById(R.id.rv_tracks)
+        rvTracks = findViewById(
+            R.id.rv_tracks
+        )
+    }
 
-        rvTracks.layoutManager = LinearLayoutManager(this)
+    private fun initRecyclerView() {
 
-        adapter = TrackAdapter(displayedTracks) { track ->
-            onTrackClicked(track)
+        rvTracks.layoutManager =
+            LinearLayoutManager(this)
+
+        adapter = TrackAdapter(
+            displayedTracks
+        ) { track ->
+            viewModel.onTrackSelected(track)
         }
 
         rvTracks.adapter = adapter
+    }
+
+    private fun initListeners() {
+
+        val btnClear = findViewById<ImageView>(
+            R.id.btn_clear_search
+        )
 
         btnClear.setOnClickListener {
-
-            searchDebounceHandler.removeCallbacks(
-                searchRunnable
-            )
 
             etSearch.text.clear()
 
             hideKeyboard(etSearch)
-
-            hidePlaceholder()
-
-            updateHistoryVisibility()
         }
 
         btnRetry.setOnClickListener {
-
-            val query = etSearch.text?.toString().orEmpty()
-
-            if (query.isNotEmpty()) {
-                search(query)
-            }
+            viewModel.retry()
         }
 
         btnClearHistory.setOnClickListener {
-
-            historyInteractor.clearHistory()
-
-            setTracks(emptyList())
-
-            tvHistoryTitle.visibility = View.GONE
-            btnClearHistory.visibility = View.GONE
-            placeholderContainer.visibility = View.GONE
-            rvTracks.visibility = View.VISIBLE
+            viewModel.clearHistory()
         }
 
         etSearch.doOnTextChanged { text, _, _, _ ->
 
-            btnClear.visibility =
-                if (text.isNullOrEmpty()) {
-                    View.GONE
-                } else {
-                    View.VISIBLE
-                }
-
-            searchText = text?.toString().orEmpty()
-
-            searchDebounceHandler.removeCallbacks(
-                searchRunnable
+            viewModel.onQueryChanged(
+                text?.toString().orEmpty()
             )
-
-            if (text.isNullOrEmpty()) {
-                hidePlaceholder()
-            } else {
-                searchDebounceHandler.postDelayed(
-                    searchRunnable,
-                    SEARCH_DEBOUNCE_DELAY_MS
-                )
-            }
-
-            updateHistoryVisibility()
         }
 
-        etSearch.setOnFocusChangeListener { _, _ ->
-            updateHistoryVisibility()
+        etSearch.setOnFocusChangeListener { _, hasFocus ->
+
+            viewModel.onFocusChanged(
+                hasFocus
+            )
         }
 
-        etSearch.setOnEditorActionListener { _, actionId, _ ->
+        etSearch.setOnEditorActionListener {
+                _, actionId, _ ->
 
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-
-                val query = etSearch.text?.toString().orEmpty()
-
-                if (query.isNotEmpty()) {
-
-                    searchDebounceHandler.removeCallbacks(
-                        searchRunnable
-                    )
-
-                    search(query)
-                }
-
+            if (
+                actionId ==
+                EditorInfo.IME_ACTION_DONE
+            ) {
+                viewModel.searchNow()
                 true
             } else {
                 false
@@ -239,14 +233,236 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        updateHistoryVisibility()
+    private fun observeViewModel() {
+
+        viewModel.state.observe(
+            this
+        ) { state ->
+
+            renderState(state)
+
+            state.selectedTrack?.let { track ->
+
+                openPlayer(track)
+
+                viewModel.onTrackNavigationHandled()
+            }
+        }
     }
 
-    private fun onTrackClicked(track: Track) {
+    private fun renderState(
+        state: SearchScreenState
+    ) {
 
-        historyInteractor.addTrack(track)
+        val clearButton =
+            findViewById<ImageView>(
+                R.id.btn_clear_search
+            )
+
+        clearButton.visibility =
+            if (state.showClearButton) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+
+        if (state.isLoading) {
+            showLoading()
+            return
+        }
+
+        when (state.content) {
+
+            SearchContent.HISTORY -> {
+                showHistory(state.tracks)
+            }
+
+            SearchContent.TRACKS -> {
+                showTracks(state.tracks)
+            }
+
+            SearchContent.NOTHING_FOUND -> {
+                showNothingFound()
+            }
+
+            SearchContent.ERROR -> {
+                showError()
+            }
+
+            SearchContent.EMPTY -> {
+                showEmpty()
+            }
+        }
+    }
+
+    private fun showHistory(
+        tracks: List<Track>
+    ) {
+
+        setTracks(tracks)
+
+        tvHistoryTitle.visibility =
+            View.VISIBLE
+
+        btnClearHistory.visibility =
+            View.VISIBLE
+
+        placeholderContainer.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.VISIBLE
+
+        setHistoryLayoutMode(true)
+    }
+
+    private fun showTracks(
+        tracks: List<Track>
+    ) {
+
+        setTracks(tracks)
+
+        tvHistoryTitle.visibility =
+            View.GONE
+
+        btnClearHistory.visibility =
+            View.GONE
+
+        placeholderContainer.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.VISIBLE
+
+        setHistoryLayoutMode(false)
+    }
+
+    private fun showLoading() {
+
+        tvHistoryTitle.visibility =
+            View.GONE
+
+        btnClearHistory.visibility =
+            View.GONE
+
+        placeholderContainer.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.VISIBLE
+    }
+
+    private fun showNothingFound() {
+
+        setTracks(emptyList())
+
+        tvHistoryTitle.visibility =
+            View.GONE
+
+        btnClearHistory.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.GONE
+
+        placeholderImage.setImageResource(
+            R.drawable.ic_placeholder_no_results
+        )
+
+        placeholderMessage.text =
+            getString(
+                R.string.nothing_found
+            )
+
+        btnRetry.visibility =
+            View.GONE
+
+        placeholderContainer.visibility =
+            View.VISIBLE
+    }
+
+    private fun showError() {
+
+        setTracks(emptyList())
+
+        tvHistoryTitle.visibility =
+            View.GONE
+
+        btnClearHistory.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.GONE
+
+        placeholderImage.setImageResource(
+            R.drawable.ic_placeholder_no_internet
+        )
+
+        placeholderMessage.text =
+            getString(
+                R.string.something_went_wrong
+            )
+
+        btnRetry.visibility =
+            View.VISIBLE
+
+        placeholderContainer.visibility =
+            View.VISIBLE
+    }
+
+    private fun showEmpty() {
+
+        setTracks(emptyList())
+
+        tvHistoryTitle.visibility =
+            View.GONE
+
+        btnClearHistory.visibility =
+            View.GONE
+
+        placeholderContainer.visibility =
+            View.GONE
+
+        progressBar.visibility =
+            View.GONE
+
+        rvTracks.visibility =
+            View.VISIBLE
+
+        setHistoryLayoutMode(false)
+    }
+
+    private fun setTracks(
+        newTracks: List<Track>
+    ) {
+
+        displayedTracks.clear()
+
+        displayedTracks.addAll(
+            newTracks
+        )
+
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun openPlayer(
+        track: Track
+    ) {
 
         val intent = Intent(
             this,
@@ -262,193 +478,9 @@ class SearchActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun updateHistoryVisibility() {
-
-        val query = etSearch.text?.toString().orEmpty()
-
-        val hasFocusAndEmpty =
-            etSearch.hasFocus() && query.isEmpty()
-
-        if (!hasFocusAndEmpty) {
-
-            tvHistoryTitle.visibility = View.GONE
-            btnClearHistory.visibility = View.GONE
-
-            return
-        }
-
-        val history = historyInteractor.getHistory()
-
-        setTracks(history)
-
-        val showHistoryUi = history.isNotEmpty()
-
-        tvHistoryTitle.visibility =
-            if (showHistoryUi) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        btnClearHistory.visibility =
-            if (showHistoryUi) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        setHistoryLayoutMode(showHistoryUi)
-
-        placeholderContainer.visibility = View.GONE
-        rvTracks.visibility = View.VISIBLE
-    }
-
-    private fun setTracks(newTracks: List<Track>) {
-
-        displayedTracks.clear()
-        displayedTracks.addAll(newTracks)
-
-        adapter.notifyDataSetChanged()
-    }
-
-    private fun search(query: String) {
-
-        showLoading()
-
-        searchInteractor.search(
-            query = query,
-            consumer = object : SearchConsumer {
-
-                override fun consume(
-                    tracks: List<Track>
-                ) {
-
-                    progressBar.visibility = View.GONE
-
-                    if (tracks.isNotEmpty()) {
-
-                        setTracks(tracks)
-                        showTracks()
-
-                    } else {
-
-                        showPlaceholder(
-                            text = getString(
-                                R.string.nothing_found
-                            ),
-                            image =
-                                R.drawable.ic_placeholder_no_results,
-                            showRetry = false
-                        )
-                    }
-                }
-
-                override fun consumeError() {
-
-                    progressBar.visibility = View.GONE
-
-                    showPlaceholder(
-                        text = getString(
-                            R.string.something_went_wrong
-                        ),
-                        image =
-                            R.drawable.ic_placeholder_no_internet,
-                        showRetry = true
-                    )
-                }
-            }
-        )
-    }
-
-    private fun showLoading() {
-
-        tvHistoryTitle.visibility = View.GONE
-        btnClearHistory.visibility = View.GONE
-        placeholderContainer.visibility = View.GONE
-        rvTracks.visibility = View.GONE
-        progressBar.visibility = View.VISIBLE
-    }
-
-    private fun showTracks() {
-
-        tvHistoryTitle.visibility = View.GONE
-        btnClearHistory.visibility = View.GONE
-        placeholderContainer.visibility = View.GONE
-        progressBar.visibility = View.GONE
-        rvTracks.visibility = View.VISIBLE
-    }
-
-    private fun showPlaceholder(
-        text: String,
-        image: Int,
-        showRetry: Boolean
+    private fun hideKeyboard(
+        view: View
     ) {
-
-        setTracks(emptyList())
-
-        tvHistoryTitle.visibility = View.GONE
-        btnClearHistory.visibility = View.GONE
-        rvTracks.visibility = View.GONE
-        progressBar.visibility = View.GONE
-
-        placeholderImage.setImageResource(image)
-        placeholderMessage.text = text
-
-        btnRetry.visibility =
-            if (showRetry) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        placeholderContainer.visibility = View.VISIBLE
-    }
-
-    private fun hidePlaceholder() {
-
-        setTracks(emptyList())
-
-        placeholderContainer.visibility = View.GONE
-        progressBar.visibility = View.GONE
-        rvTracks.visibility = View.VISIBLE
-    }
-
-    override fun onSaveInstanceState(
-        outState: Bundle
-    ) {
-
-        super.onSaveInstanceState(outState)
-
-        outState.putString(
-            SEARCH_TEXT_KEY,
-            searchText
-        )
-    }
-
-    override fun onRestoreInstanceState(
-        savedInstanceState: Bundle
-    ) {
-
-        super.onRestoreInstanceState(savedInstanceState)
-
-        searchText = savedInstanceState.getString(
-            SEARCH_TEXT_KEY,
-            ""
-        )
-
-        etSearch.setText(searchText)
-    }
-
-    override fun onDestroy() {
-
-        super.onDestroy()
-
-        searchDebounceHandler.removeCallbacks(
-            searchRunnable
-        )
-    }
-
-    private fun hideKeyboard(view: View) {
 
         val imm = getSystemService(
             Context.INPUT_METHOD_SERVICE
@@ -502,14 +534,10 @@ class SearchActivity : AppCompatActivity() {
                 ConstraintLayout.LayoutParams.PARENT_ID
         }
 
-        rvTracks.layoutParams = recyclerParams
-        btnClearHistory.layoutParams = buttonParams
-    }
+        rvTracks.layoutParams =
+            recyclerParams
 
-    companion object {
-
-        private const val SEARCH_TEXT_KEY = "SEARCH_TEXT"
-
-        private const val SEARCH_DEBOUNCE_DELAY_MS = 2000L
+        btnClearHistory.layoutParams =
+            buttonParams
     }
 }

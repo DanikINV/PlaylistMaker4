@@ -4,40 +4,26 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.playlistmaker.R
-import com.example.playlistmaker.domain.interactors.SettingsInteractor
-import com.example.playlistmaker.presentation.Creator
 import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var settingsInteractor: SettingsInteractor
-
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        settingsInteractor =
-            Creator.provideSettingsInteractor(applicationContext)
-
-        val isDarkMode = settingsInteractor.isDarkTheme()
-
-        AppCompatDelegate.setDefaultNightMode(
-            if (isDarkMode) {
-                AppCompatDelegate.MODE_NIGHT_YES
-            } else {
-                AppCompatDelegate.MODE_NIGHT_NO
-            }
-        )
-
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(
+            window,
+            false
+        )
 
-        setContentView(R.layout.activity_main)
+        setContentView(
+            R.layout.activity_main
+        )
 
         WindowInsetsControllerCompat(
             window,
@@ -74,9 +60,10 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val searchButton = findViewById<MaterialButton>(
-            R.id.btn_search
-        )
+        val searchButton =
+            findViewById<MaterialButton>(
+                R.id.btn_search
+            )
 
         val mediaLibraryButton =
             findViewById<MaterialButton>(
@@ -89,6 +76,7 @@ class MainActivity : AppCompatActivity() {
             )
 
         searchButton.setOnClickListener {
+
             startActivity(
                 Intent(
                     this,
@@ -98,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         mediaLibraryButton.setOnClickListener {
+
             startActivity(
                 Intent(
                     this,
@@ -107,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         settingsButton.setOnClickListener {
+
             startActivity(
                 Intent(
                     this,

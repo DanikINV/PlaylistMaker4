@@ -83,11 +83,9 @@ class SettingsActivity : AppCompatActivity() {
             R.id.switch_dark_theme
         )
 
-        // Получаем текущее состояние темы через Interactor
         switchDarkTheme.isChecked =
             settingsInteractor.isDarkTheme()
 
-        // Сохраняем состояние темы через Interactor
         switchDarkTheme.setOnCheckedChangeListener { _, isChecked ->
 
             settingsInteractor.saveDarkTheme(
