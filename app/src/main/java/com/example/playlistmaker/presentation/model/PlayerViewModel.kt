@@ -4,15 +4,16 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.playlistmaker.domain.model.Track
+import com.example.playlistmaker.domain.interactors.PlayerInteractor
 
 class PlayerViewModel(
-    private val track: Track
+    private val playerInteractor: PlayerInteractor
 ) : ViewModel() {
+
+    private val track = playerInteractor.getTrack()
 
     private val _state = MutableLiveData(
         PlayerScreenState(
@@ -24,330 +25,145 @@ class PlayerViewModel(
 
     private var mediaPlayer: MediaPlayer? = null
 
-    private val mainHandler = Handler(
+    private val handler = Handler(
         Looper.getMainLooper()
     )
 
-    private val progressUpdateRunnable =
-        object : Runnable {
+    fun preparePlayer() {
 
-            override fun run() {
-
-                val player = mediaPlayer
-
-                if (
-                    player != null &&
-                    player.isPlaying
-                ) {
-                    updateState {
-                        it.copy(
-                            progress = player.currentPosition
-                        )
-                    }
-
-                    mainHandler.postDelayed(
-                        this,
-                        PROGRESS_UPDATE_DELAY_MS
-                    )
-                }
-            }
-        }
-
-    init {
-        preparePlayer()
-    }
-
-    private fun preparePlayer() {
-
-        val previewUrl = track.previewUrl
-
-        Log.d(
-            TAG,
-            "Preview URL = $previewUrl"
-        )
-
-        if (previewUrl.isNullOrBlank()) {
-
-            Log.e(
-                TAG,
-                "Preview URL is empty"
-            )
-
-            updateState {
-                it.copy(
-                    playbackState =
-                        PlayerPlaybackState.DEFAULT,
-                    isPlayEnabled = false
-                )
-            }
-
+        if (mediaPlayer != null) {
             return
         }
 
-        try {
+        val previewUrl = track.previewUrl
 
-            mediaPlayer = MediaPlayer().apply {
+        if (previewUrl.isNullOrEmpty()) {
+            return
+        }
 
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(
-                            AudioAttributes.USAGE_MEDIA
-                        )
-                        .setContentType(
-                            AudioAttributes.CONTENT_TYPE_MUSIC
-                        )
-                        .build()
-                )
+        mediaPlayer = MediaPlayer().apply {
 
-                setOnPreparedListener {
-
-                    Log.d(
-                        TAG,
-                        "MediaPlayer prepared"
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(
+                        AudioAttributes.CONTENT_TYPE_MUSIC
                     )
-
-                    updateState {
-                        it.copy(
-                            playbackState =
-                                PlayerPlaybackState.PREPARED,
-                            progress = 0,
-                            isPlayEnabled = true
-                        )
-                    }
-                }
-
-                setOnCompletionListener {
-
-                    Log.d(
-                        TAG,
-                        "Playback completed"
+                    .setUsage(
+                        AudioAttributes.USAGE_MEDIA
                     )
-
-                    mainHandler.removeCallbacks(
-                        progressUpdateRunnable
-                    )
-
-                    updateState {
-                        it.copy(
-                            playbackState =
-                                PlayerPlaybackState.PREPARED,
-                            progress = 0,
-                            isPlayEnabled = true
-                        )
-                    }
-                }
-
-                setOnErrorListener { _, what, extra ->
-
-                    Log.e(
-                        TAG,
-                        "MediaPlayer error: what=$what extra=$extra"
-                    )
-
-                    mainHandler.removeCallbacks(
-                        progressUpdateRunnable
-                    )
-
-                    updateState {
-                        it.copy(
-                            playbackState =
-                                PlayerPlaybackState.DEFAULT,
-                            progress = 0,
-                            isPlayEnabled = false
-                        )
-                    }
-
-                    true
-                }
-
-                setDataSource(previewUrl)
-
-                prepareAsync()
-            }
-
-        } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "MediaPlayer prepare exception",
-                e
+                    .build()
             )
 
-            updateState {
-                it.copy(
-                    playbackState =
-                        PlayerPlaybackState.DEFAULT,
-                    progress = 0,
-                    isPlayEnabled = false
+            setDataSource(previewUrl)
+
+            setOnPreparedListener {
+
+                _state.value = _state.value?.copy(
+                    playbackState = PlayerPlaybackState.PREPARED,
+                    isPlayEnabled = true,
+                    progress = 0
                 )
             }
+
+            setOnCompletionListener {
+
+                _state.value = _state.value?.copy(
+                    playbackState = PlayerPlaybackState.PREPARED,
+                    progress = 0
+                )
+
+                handler.removeCallbacksAndMessages(null)
+            }
+
+            setOnErrorListener { _, _, _ ->
+
+                _state.value = _state.value?.copy(
+                    playbackState = PlayerPlaybackState.DEFAULT,
+                    isPlayEnabled = false
+                )
+
+                true
+            }
+
+            prepareAsync()
         }
     }
 
     fun onPlayClicked() {
 
-        val currentState = _state.value
-            ?.playbackState
+        val player = mediaPlayer ?: return
 
-        Log.d(
-            TAG,
-            "Play clicked. State = $currentState"
-        )
-
-        when (currentState) {
-
-            PlayerPlaybackState.PLAYING -> {
-                pausePlayer()
-            }
+        when (_state.value?.playbackState) {
 
             PlayerPlaybackState.PREPARED,
             PlayerPlaybackState.PAUSED -> {
-                startPlayer()
+
+                player.start()
+
+                _state.value = _state.value?.copy(
+                    playbackState = PlayerPlaybackState.PLAYING
+                )
+
+                updateProgress()
             }
 
-            else -> {
-                Log.d(
-                    TAG,
-                    "Player is not ready"
+            PlayerPlaybackState.PLAYING -> {
+
+                player.pause()
+
+                _state.value = _state.value?.copy(
+                    playbackState = PlayerPlaybackState.PAUSED
                 )
+
+                handler.removeCallbacksAndMessages(null)
             }
+
+            else -> Unit
         }
     }
 
     fun onPause() {
 
-        if (
-            _state.value?.playbackState ==
-            PlayerPlaybackState.PLAYING
-        ) {
-            pausePlayer()
+        val player = mediaPlayer ?: return
+
+        if (player.isPlaying) {
+            player.pause()
+
+            _state.value = _state.value?.copy(
+                playbackState = PlayerPlaybackState.PAUSED
+            )
         }
+
+        handler.removeCallbacksAndMessages(null)
     }
 
-    private fun startPlayer() {
+    private fun updateProgress() {
 
-        val player = mediaPlayer
+        val player = mediaPlayer ?: return
 
-        if (player == null) {
-            Log.e(
-                TAG,
-                "MediaPlayer is null"
-            )
+        if (!player.isPlaying) {
             return
         }
 
-        try {
+        _state.value = _state.value?.copy(
+            progress = player.currentPosition
+        )
 
-            if (!player.isPlaying) {
-                player.start()
-            }
-
-            updateState {
-                it.copy(
-                    playbackState =
-                        PlayerPlaybackState.PLAYING
-                )
-            }
-
-            mainHandler.removeCallbacks(
-                progressUpdateRunnable
-            )
-
-            mainHandler.post(
-                progressUpdateRunnable
-            )
-
-            Log.d(
-                TAG,
-                "Playback started"
-            )
-
-        } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Start playback exception",
-                e
-            )
-
-            updateState {
-                it.copy(
-                    playbackState =
-                        PlayerPlaybackState.DEFAULT,
-                    isPlayEnabled = false
-                )
-            }
-        }
-    }
-
-    private fun pausePlayer() {
-
-        try {
-
-            mediaPlayer?.pause()
-
-            mainHandler.removeCallbacks(
-                progressUpdateRunnable
-            )
-
-            updateState {
-                it.copy(
-                    playbackState =
-                        PlayerPlaybackState.PAUSED
-                )
-            }
-
-            Log.d(
-                TAG,
-                "Playback paused"
-            )
-
-        } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Pause playback exception",
-                e
-            )
-        }
-    }
-
-    private fun updateState(
-        reducer: (
-            PlayerScreenState
-        ) -> PlayerScreenState
-    ) {
-
-        val currentState =
-            _state.value
-                ?: PlayerScreenState(track)
-
-        _state.value = reducer(
-            currentState
+        handler.postDelayed(
+            {
+                updateProgress()
+            },
+            300
         )
     }
 
     override fun onCleared() {
 
-        mainHandler.removeCallbacks(
-            progressUpdateRunnable
-        )
+        handler.removeCallbacksAndMessages(null)
 
         mediaPlayer?.release()
         mediaPlayer = null
 
-        Log.d(
-            TAG,
-            "MediaPlayer released"
-        )
-
         super.onCleared()
-    }
-
-    companion object {
-
-        private const val TAG = "PlayerViewModel"
-
-        private const val PROGRESS_UPDATE_DELAY_MS = 300L
     }
 }

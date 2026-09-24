@@ -2,24 +2,19 @@ package com.example.playlistmaker.presentation.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.playlistmaker.domain.model.Track
+import com.example.playlistmaker.domain.interactors.PlayerInteractor
 
 class PlayerViewModelFactory(
-    private val track: Track
+    private val playerInteractor: PlayerInteractor
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(
         modelClass: Class<T>
     ): T {
-
-        if (
-            modelClass.isAssignableFrom(
-                PlayerViewModel::class.java
-            )
-        ) {
+        if (modelClass.isAssignableFrom(PlayerViewModel::class.java)) {
             return PlayerViewModel(
-                track
+                playerInteractor
             ) as T
         }
 

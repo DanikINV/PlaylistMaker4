@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.playlistmaker.presentation.activities
 
 import android.content.res.Configuration
@@ -17,6 +19,7 @@ import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
+import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.example.playlistmaker.presentation.model.PlayerPlaybackState
@@ -113,8 +116,16 @@ class PlayerActivity : AppCompatActivity() {
         val track =
             trackParcelable.toDomain()
 
-        val factory =
-            PlayerViewModelFactory(track)
+        val factory = PlayerViewModelFactory(
+            Creator.providePlayerInteractor(track)
+        )
+
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[PlayerViewModel::class.java]
+
+        viewModel.preparePlayer()
 
         viewModel = ViewModelProvider(
             this,
