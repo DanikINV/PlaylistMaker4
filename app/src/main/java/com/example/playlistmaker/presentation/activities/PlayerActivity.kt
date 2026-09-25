@@ -1,10 +1,9 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.playlistmaker.presentation.activities
 
 import android.content.res.Configuration
-import android.media.MediaPlayer
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -14,27 +13,36 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
+import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.model.TrackParcelable
+import com.example.playlistmaker.presentation.model.PlayerPlaybackState
+import com.example.playlistmaker.presentation.model.PlayerScreenState
+import com.example.playlistmaker.presentation.model.PlayerViewModel
+import com.example.playlistmaker.presentation.model.PlayerViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class PlayerActivity : AppCompatActivity() {
 
-    private var mediaPlayer: MediaPlayer? = null
-    private var playerState = STATE_DEFAULT
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private lateinit var viewModel: PlayerViewModel
 
     private lateinit var btnPlay: ImageView
     private lateinit var tvProgress: TextView
 
     private val timeFormat =
-        SimpleDateFormat("mm:ss", Locale.getDefault())
+        SimpleDateFormat(
+            "mm:ss",
+            Locale.getDefault()
+        )
+
+    private var boundTrackId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,7 +63,8 @@ class PlayerActivity : AppCompatActivity() {
             window,
             window.decorView
         ).apply {
-            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightStatusBars =
+                !isNightMode
         }
 
         val rootView =
@@ -67,9 +76,10 @@ class PlayerActivity : AppCompatActivity() {
             rootView
         ) { view, insets ->
 
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars()
-            )
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
 
             view.setPadding(
                 0,
@@ -81,8 +91,13 @@ class PlayerActivity : AppCompatActivity() {
             insets
         }
 
-        btnPlay = findViewById(R.id.btn_play)
-        tvProgress = findViewById(R.id.tv_progress)
+        btnPlay = findViewById(
+            R.id.btn_play
+        )
+
+        tvProgress = findViewById(
+            R.id.tv_progress
+        )
 
         findViewById<ImageView>(
             R.id.btn_back
@@ -98,17 +113,77 @@ class PlayerActivity : AppCompatActivity() {
                 return
             }
 
-        val track = trackParcelable.toDomain()
+        val track =
+            trackParcelable.toDomain()
 
-        bindTrack(track)
-        preparePlayer(track.previewUrl)
+        val factory = PlayerViewModelFactory(
+            Creator.providePlayerInteractor(track)
+        )
+
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[PlayerViewModel::class.java]
+
+        viewModel.preparePlayer()
+
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[PlayerViewModel::class.java]
 
         btnPlay.setOnClickListener {
-            playbackControl()
+            viewModel.onPlayClicked()
+        }
+
+        viewModel.state.observe(
+            this
+        ) { state ->
+            renderState(state)
         }
     }
 
-    private fun bindTrack(track: Track) {
+    private fun renderState(
+        state: PlayerScreenState
+    ) {
+
+        if (
+            boundTrackId != state.track.trackId
+        ) {
+
+            bindTrack(state.track)
+
+            boundTrackId =
+                state.track.trackId
+        }
+
+        tvProgress.text =
+            timeFormat.format(
+                state.progress
+            )
+
+        btnPlay.isEnabled =
+            state.isPlayEnabled
+
+        when (
+            state.playbackState
+        ) {
+
+            PlayerPlaybackState.PLAYING -> {
+                setPlayButtonIcon(true)
+            }
+
+            PlayerPlaybackState.PREPARED,
+            PlayerPlaybackState.PAUSED,
+            PlayerPlaybackState.DEFAULT -> {
+                setPlayButtonIcon(false)
+            }
+        }
+    }
+
+    private fun bindTrack(
+        track: Track
+    ) {
 
         findViewById<TextView>(
             R.id.tv_track_name
@@ -118,15 +193,9 @@ class PlayerActivity : AppCompatActivity() {
             R.id.tv_artist_name
         ).text = track.artistName
 
-        val durationFormat =
-            SimpleDateFormat(
-                "mm:ss",
-                Locale.getDefault()
-            )
-
         findViewById<TextView>(
             R.id.tv_duration_value
-        ).text = durationFormat.format(
+        ).text = timeFormat.format(
             track.trackTime
         )
 
@@ -139,7 +208,9 @@ class PlayerActivity : AppCompatActivity() {
         bindOptionalRow(
             R.id.row_year,
             R.id.tv_year_value,
-            extractYear(track.releaseDate)
+            extractYear(
+                track.releaseDate
+            )
         )
 
         bindOptionalRow(
@@ -160,13 +231,21 @@ class PlayerActivity : AppCompatActivity() {
             )
 
         Glide.with(this)
-            .load(track.getCoverArtwork())
-            .placeholder(R.drawable.vector)
-            .error(R.drawable.vector)
+            .load(
+                track.getCoverArtwork()
+            )
+            .placeholder(
+                R.drawable.vector
+            )
+            .error(
+                R.drawable.vector
+            )
             .transform(
                 MultiTransformation(
                     CenterCrop(),
-                    RoundedCorners(cornerRadiusPx)
+                    RoundedCorners(
+                        cornerRadiusPx
+                    )
                 )
             )
             .into(
@@ -182,15 +261,18 @@ class PlayerActivity : AppCompatActivity() {
         value: String?
     ) {
 
-        val row = findViewById<View>(rowId)
+        val row =
+            findViewById<View>(rowId)
 
         if (value.isNullOrBlank()) {
 
-            row.visibility = View.GONE
+            row.visibility =
+                View.GONE
 
         } else {
 
-            row.visibility = View.VISIBLE
+            row.visibility =
+                View.VISIBLE
 
             findViewById<TextView>(
                 valueViewId
@@ -209,109 +291,9 @@ class PlayerActivity : AppCompatActivity() {
             return null
         }
 
-        return releaseDate.substring(0, 4)
-    }
-
-    private fun preparePlayer(
-        previewUrl: String?
-    ) {
-
-        if (previewUrl.isNullOrBlank()) {
-
-            btnPlay.isEnabled = false
-
-            return
-        }
-
-        mediaPlayer = MediaPlayer().apply {
-
-            setDataSource(previewUrl)
-
-            prepareAsync()
-
-            setOnPreparedListener {
-
-                playerState = STATE_PREPARED
-
-                btnPlay.isEnabled = true
-            }
-
-            setOnCompletionListener {
-
-                mainHandler.removeCallbacks(
-                    progressUpdateRunnable
-                )
-
-                tvProgress.text =
-                    getString(
-                        R.string.default_progress
-                    )
-
-                setPlayButtonIcon(
-                    isPlaying = false
-                )
-
-                playerState = STATE_PREPARED
-            }
-
-            setOnErrorListener { _, _, _ ->
-
-                playerState = STATE_DEFAULT
-                btnPlay.isEnabled = false
-
-                mainHandler.removeCallbacks(
-                    progressUpdateRunnable
-                )
-
-                false
-            }
-        }
-    }
-
-    private fun playbackControl() {
-
-        when (playerState) {
-
-            STATE_PLAYING -> {
-                pausePlayer()
-            }
-
-            STATE_PREPARED,
-            STATE_PAUSED -> {
-                startPlayer()
-            }
-
-            else -> Unit
-        }
-    }
-
-    private fun startPlayer() {
-
-        mediaPlayer?.start()
-
-        setPlayButtonIcon(
-            isPlaying = true
-        )
-
-        playerState = STATE_PLAYING
-
-        mainHandler.post(
-            progressUpdateRunnable
-        )
-    }
-
-    private fun pausePlayer() {
-
-        mediaPlayer?.pause()
-
-        setPlayButtonIcon(
-            isPlaying = false
-        )
-
-        playerState = STATE_PAUSED
-
-        mainHandler.removeCallbacks(
-            progressUpdateRunnable
+        return releaseDate.substring(
+            0,
+            4
         )
     }
 
@@ -328,55 +310,14 @@ class PlayerActivity : AppCompatActivity() {
         )
     }
 
-    private val progressUpdateRunnable =
-        object : Runnable {
-
-            override fun run() {
-
-                mediaPlayer?.let {
-                    tvProgress.text =
-                        timeFormat.format(
-                            it.currentPosition
-                        )
-                }
-
-                mainHandler.postDelayed(
-                    this,
-                    PROGRESS_UPDATE_DELAY_MS
-                )
-            }
-        }
-
     override fun onPause() {
-
         super.onPause()
 
-        if (playerState == STATE_PLAYING) {
-            pausePlayer()
-        }
-    }
-
-    override fun onDestroy() {
-
-        super.onDestroy()
-
-        mainHandler.removeCallbacks(
-            progressUpdateRunnable
-        )
-
-        mediaPlayer?.release()
-        mediaPlayer = null
+        viewModel.onPause()
     }
 
     companion object {
 
         const val EXTRA_TRACK = "EXTRA_TRACK"
-
-        private const val STATE_DEFAULT = 0
-        private const val STATE_PREPARED = 1
-        private const val STATE_PLAYING = 2
-        private const val STATE_PAUSED = 3
-
-        private const val PROGRESS_UPDATE_DELAY_MS = 300L
     }
 }

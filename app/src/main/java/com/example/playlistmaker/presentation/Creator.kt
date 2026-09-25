@@ -13,6 +13,9 @@ import com.example.playlistmaker.domain.interactors.SearchInteractor
 import com.example.playlistmaker.domain.interactors.SearchInteractorImpl
 import com.example.playlistmaker.domain.interactors.SettingsInteractor
 import com.example.playlistmaker.domain.interactors.SettingsInteractorImpl
+import com.example.playlistmaker.domain.interactors.PlayerInteractor
+import com.example.playlistmaker.domain.interactors.PlayerInteractorImpl
+import com.example.playlistmaker.domain.model.Track
 
 object Creator {
 
@@ -60,5 +63,9 @@ object Creator {
         )
 
         return SettingsInteractorImpl(repository)
+    }
+
+    fun providePlayerInteractor(track: Track): PlayerInteractor {
+        return PlayerInteractorImpl(track)
     }
 }
