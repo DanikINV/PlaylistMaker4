@@ -14,16 +14,14 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
 import com.example.playlistmaker.R
-import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.presentation.model.SettingsScreenState
 import com.example.playlistmaker.presentation.model.SettingsViewModel
-import com.example.playlistmaker.presentation.model.SettingsViewModelFactory
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SettingsActivity : AppCompatActivity() {
 
-    private lateinit var viewModel: SettingsViewModel
+    private val viewModel: SettingsViewModel by viewModel()
     private lateinit var switchDarkTheme: SwitchCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,17 +63,6 @@ class SettingsActivity : AppCompatActivity() {
 
             insets
         }
-
-        val factory = SettingsViewModelFactory(
-            Creator.provideSettingsInteractor(
-                applicationContext
-            )
-        )
-
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[SettingsViewModel::class.java]
 
         initViews()
         initListeners()
