@@ -19,22 +19,20 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doOnTextChanged
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.playlistmaker.R
 import com.example.playlistmaker.domain.model.Track
-import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.presentation.adapters.TrackAdapter
 import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.example.playlistmaker.presentation.model.SearchContent
 import com.example.playlistmaker.presentation.model.SearchScreenState
 import com.example.playlistmaker.presentation.model.SearchViewModel
-import com.example.playlistmaker.presentation.model.SearchViewModelFactory
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SearchActivity : AppCompatActivity() {
 
-    private lateinit var viewModel: SearchViewModel
+    private val viewModel: SearchViewModel by viewModel()
 
     private lateinit var etSearch: EditText
     private lateinit var rvTracks: RecyclerView
@@ -103,20 +101,6 @@ class SearchActivity : AppCompatActivity() {
 
             insets
         }
-
-        val factory = SearchViewModelFactory(
-            searchInteractor =
-                Creator.provideSearchInteractor(),
-            historyInteractor =
-                Creator.provideHistoryInteractor(
-                    applicationContext
-                )
-        )
-
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[SearchViewModel::class.java]
 
         initViews()
         initRecyclerView()

@@ -13,25 +13,26 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
-import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
-import com.example.playlistmaker.presentation.Creator
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.example.playlistmaker.presentation.model.PlayerPlaybackState
 import com.example.playlistmaker.presentation.model.PlayerScreenState
 import com.example.playlistmaker.presentation.model.PlayerViewModel
-import com.example.playlistmaker.presentation.model.PlayerViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 
 class PlayerActivity : AppCompatActivity() {
 
-    private lateinit var viewModel: PlayerViewModel
+    private val viewModel: PlayerViewModel by viewModel {
+        parametersOf(track)
+    }
 
     private lateinit var btnPlay: ImageView
     private lateinit var tvProgress: TextView
@@ -43,6 +44,8 @@ class PlayerActivity : AppCompatActivity() {
         )
 
     private var boundTrackId: Long? = null
+
+    private lateinit var track: Track
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,24 +116,9 @@ class PlayerActivity : AppCompatActivity() {
                 return
             }
 
-        val track =
-            trackParcelable.toDomain()
-
-        val factory = PlayerViewModelFactory(
-            Creator.providePlayerInteractor(track)
-        )
-
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[PlayerViewModel::class.java]
+        track = trackParcelable.toDomain()
 
         viewModel.preparePlayer()
-
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[PlayerViewModel::class.java]
 
         btnPlay.setOnClickListener {
             viewModel.onPlayClicked()
