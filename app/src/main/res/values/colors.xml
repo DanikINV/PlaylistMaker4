@@ -15,4 +15,6 @@
     <color name="settings_icon_color">#AEAFB4</color>
     <color name="player_layout_icon">#AEAFB4</color>
     <color name="track_secondary_text">#AEAFB4</color>
+    <color name="switch_thumb_checked">#00C8C7</color>
+    <color name="switch_track_checked">#B2F0EE</color>
 </resources>

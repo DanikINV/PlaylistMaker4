@@ -29,6 +29,8 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.example.playlistmaker.presentation.model.PlaylistsViewModel
+import com.example.playlistmaker.presentation.model.FavoritesViewModel
 
 val appModule = module {
 
@@ -101,5 +103,13 @@ val appModule = module {
         PlayerViewModel(
             playerInteractor = get { parametersOf(params.get<Track>()) }
         )
+    }
+
+    viewModel {
+        PlaylistsViewModel()
+    }
+
+    viewModel {
+        FavoritesViewModel()
     }
 }
