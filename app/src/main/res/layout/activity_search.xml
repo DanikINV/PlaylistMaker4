@@ -17,17 +17,6 @@
         android:gravity="center_vertical"
         android:padding="@dimen/spacing_medium">
 
-        <ImageView
-            android:id="@+id/btn_back"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="@string/back"
-            android:src="@drawable/ic_back_arrow_24"
-            tools:ignore="TouchTargetSizeCheck" />
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
