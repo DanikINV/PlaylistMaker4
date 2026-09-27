@@ -7,11 +7,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -19,8 +14,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.playlistmaker.R
+import com.example.playlistmaker.databinding.ActivitySearchBinding
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.activities.PlayerActivity
 import com.example.playlistmaker.presentation.adapters.TrackAdapter
@@ -32,17 +27,10 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SearchFragment : Fragment(R.layout.activity_search) {
 
-    private val viewModel: SearchViewModel by viewModel()
+    private var _binding: ActivitySearchBinding? = null
+    private val binding get() = _binding!!
 
-    private lateinit var etSearch: EditText
-    private lateinit var rvTracks: RecyclerView
-    private lateinit var placeholderContainer: View
-    private lateinit var placeholderImage: ImageView
-    private lateinit var placeholderMessage: TextView
-    private lateinit var btnRetry: Button
-    private lateinit var tvHistoryTitle: TextView
-    private lateinit var btnClearHistory: Button
-    private lateinit var progressBar: ProgressBar
+    private val viewModel: SearchViewModel by viewModel()
 
     private val displayedTracks = ArrayList<Track>()
 
@@ -54,15 +42,15 @@ class SearchFragment : Fragment(R.layout.activity_search) {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupWindowInsets(view)
+        _binding = ActivitySearchBinding.bind(view)
 
-        initViews(view)
+        setupWindowInsets()
         initRecyclerView()
         initListeners()
         observeViewModel()
     }
 
-    private fun setupWindowInsets(view: View) {
+    private fun setupWindowInsets() {
 
         val isNightMode =
             resources.configuration.uiMode and
@@ -74,21 +62,14 @@ class SearchFragment : Fragment(R.layout.activity_search) {
             requireActivity().window.decorView
         ).isAppearanceLightStatusBars = !isNightMode
 
-        val rootView = view.findViewById<View>(
-            R.id.root_layout
-        )
-
-        val toolbarLayout = view.findViewById<View>(
-            R.id.toolbar_layout
-        )
-
         ViewCompat.setOnApplyWindowInsetsListener(
-            rootView
+            binding.rootLayout
         ) { _, insets ->
 
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars()
-            )
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
 
             val density =
                 resources.displayMetrics.density
@@ -96,7 +77,7 @@ class SearchFragment : Fragment(R.layout.activity_search) {
             val spacing =
                 (16 * density).toInt()
 
-            toolbarLayout.setPadding(
+            binding.toolbarLayout.setPadding(
                 spacing,
                 systemBars.top + spacing,
                 spacing,
@@ -107,93 +88,49 @@ class SearchFragment : Fragment(R.layout.activity_search) {
         }
     }
 
-    private fun initViews(view: View) {
-
-        etSearch = view.findViewById(
-            R.id.et_search
-        )
-
-        placeholderContainer = view.findViewById(
-            R.id.placeholder_container
-        )
-
-        placeholderImage = view.findViewById(
-            R.id.placeholder_image
-        )
-
-        placeholderMessage = view.findViewById(
-            R.id.placeholder_message
-        )
-
-        btnRetry = view.findViewById(
-            R.id.btn_retry
-        )
-
-        tvHistoryTitle = view.findViewById(
-            R.id.tv_history_title
-        )
-
-        btnClearHistory = view.findViewById(
-            R.id.btn_clear_history
-        )
-
-        progressBar = view.findViewById(
-            R.id.progress_bar
-        )
-
-        rvTracks = view.findViewById(
-            R.id.rv_tracks
-        )
-    }
-
     private fun initRecyclerView() {
 
-        rvTracks.layoutManager =
+        binding.rvTracks.layoutManager =
             LinearLayoutManager(requireContext())
 
         adapter = TrackAdapter(
             displayedTracks
         ) { track ->
-
             viewModel.onTrackSelected(track)
         }
 
-        rvTracks.adapter = adapter
+        binding.rvTracks.adapter = adapter
     }
 
     private fun initListeners() {
 
-        val btnClear = requireView().findViewById<ImageView>(
-            R.id.btn_clear_search
-        )
+        binding.btnClearSearch.setOnClickListener {
 
-        btnClear.setOnClickListener {
-
-            etSearch.text.clear()
-            hideKeyboard(etSearch)
+            binding.etSearch.text.clear()
+            hideKeyboard(binding.etSearch)
         }
 
-        btnRetry.setOnClickListener {
+        binding.btnRetry.setOnClickListener {
             viewModel.retry()
         }
 
-        btnClearHistory.setOnClickListener {
+        binding.btnClearHistory.setOnClickListener {
             viewModel.clearHistory()
         }
 
-        etSearch.doOnTextChanged { text, _, _, _ ->
+        binding.etSearch.doOnTextChanged { text, _, _, _ ->
 
             viewModel.onQueryChanged(
                 text?.toString().orEmpty()
             )
         }
 
-        etSearch.setOnFocusChangeListener { _, hasFocus ->
+        binding.etSearch.setOnFocusChangeListener { _, hasFocus ->
 
             viewModel.onFocusChanged(hasFocus)
         }
 
-        etSearch.setOnEditorActionListener {
+        binding.etSearch.setOnEditorActionListener {
                 _, actionId, _ ->
 
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -228,12 +165,7 @@ class SearchFragment : Fragment(R.layout.activity_search) {
         state: SearchScreenState
     ) {
 
-        val clearButton =
-            requireView().findViewById<ImageView>(
-                R.id.btn_clear_search
-            )
-
-        clearButton.visibility =
+        binding.btnClearSearch.visibility =
             if (state.showClearButton) {
                 View.VISIBLE
             } else {
@@ -275,19 +207,19 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
         setTracks(tracks)
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.VISIBLE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.VISIBLE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.VISIBLE
 
         setHistoryLayoutMode(true)
@@ -299,19 +231,19 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
         setTracks(tracks)
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.GONE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.GONE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.VISIBLE
 
         setHistoryLayoutMode(false)
@@ -319,19 +251,19 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
     private fun showLoading() {
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.GONE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.GONE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.VISIBLE
     }
 
@@ -339,29 +271,29 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
         setTracks(emptyList())
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.GONE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.GONE
 
-        placeholderImage.setImageResource(
+        binding.placeholderImage.setImageResource(
             R.drawable.ic_placeholder_no_results
         )
 
-        placeholderMessage.text =
+        binding.placeholderMessage.text =
             getString(R.string.nothing_found)
 
-        btnRetry.visibility =
+        binding.btnRetry.visibility =
             View.GONE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.VISIBLE
     }
 
@@ -369,29 +301,29 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
         setTracks(emptyList())
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.GONE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.GONE
 
-        placeholderImage.setImageResource(
+        binding.placeholderImage.setImageResource(
             R.drawable.ic_placeholder_no_internet
         )
 
-        placeholderMessage.text =
+        binding.placeholderMessage.text =
             getString(R.string.something_went_wrong)
 
-        btnRetry.visibility =
+        binding.btnRetry.visibility =
             View.VISIBLE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.VISIBLE
     }
 
@@ -399,19 +331,19 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
         setTracks(emptyList())
 
-        tvHistoryTitle.visibility =
+        binding.tvHistoryTitle.visibility =
             View.GONE
 
-        btnClearHistory.visibility =
+        binding.btnClearHistory.visibility =
             View.GONE
 
-        placeholderContainer.visibility =
+        binding.placeholderContainer.visibility =
             View.GONE
 
-        progressBar.visibility =
+        binding.progressBar.visibility =
             View.GONE
 
-        rvTracks.visibility =
+        binding.rvTracks.visibility =
             View.VISIBLE
 
         setHistoryLayoutMode(false)
@@ -422,7 +354,6 @@ class SearchFragment : Fragment(R.layout.activity_search) {
     ) {
 
         displayedTracks.clear()
-
         displayedTracks.addAll(newTracks)
 
         adapter.notifyDataSetChanged()
@@ -468,11 +399,11 @@ class SearchFragment : Fragment(R.layout.activity_search) {
     ) {
 
         val recyclerParams =
-            rvTracks.layoutParams
+            binding.rvTracks.layoutParams
                     as ConstraintLayout.LayoutParams
 
         val buttonParams =
-            btnClearHistory.layoutParams
+            binding.btnClearHistory.layoutParams
                     as ConstraintLayout.LayoutParams
 
         if (compact) {
@@ -503,17 +434,15 @@ class SearchFragment : Fragment(R.layout.activity_search) {
                 ConstraintLayout.LayoutParams.PARENT_ID
         }
 
-        rvTracks.layoutParams =
+        binding.rvTracks.layoutParams =
             recyclerParams
 
-        btnClearHistory.layoutParams =
+        binding.btnClearHistory.layoutParams =
             buttonParams
     }
 
-    companion object {
-
-        fun newInstance(): SearchFragment {
-            return SearchFragment()
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

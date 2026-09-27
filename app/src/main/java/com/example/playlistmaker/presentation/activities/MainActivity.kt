@@ -1,7 +1,6 @@
 package com.example.playlistmaker.presentation.activities
 
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -25,10 +24,6 @@ class MainActivity : AppCompatActivity() {
             R.layout.activity_main
         )
 
-        val rootView = findViewById<View>(
-            R.id.root_layout
-        )
-
         val navHostFragment =
             supportFragmentManager.findFragmentById(
                 R.id.nav_host_fragment
@@ -41,6 +36,25 @@ class MainActivity : AppCompatActivity() {
             findViewById<BottomNavigationView>(
                 R.id.bottom_navigation
             )
+
+        ViewCompat.setOnApplyWindowInsetsListener(
+            bottomNavigation
+        ) { view, insets ->
+
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
+
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                systemBars.bottom
+            )
+
+            insets
+        }
 
         bottomNavigation.setupWithNavController(
             navController
