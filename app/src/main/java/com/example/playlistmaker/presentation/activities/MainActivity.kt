@@ -1,15 +1,14 @@
 package com.example.playlistmaker.presentation.activities
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.example.playlistmaker.R
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,84 +24,40 @@ class MainActivity : AppCompatActivity() {
             R.layout.activity_main
         )
 
-        WindowInsetsControllerCompat(
-            window,
-            window.decorView
-        ).apply {
-            isAppearanceLightStatusBars = false
-        }
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(
+                R.id.nav_host_fragment
+            ) as NavHostFragment
 
-        val rootView = findViewById<View>(
-            R.id.root_layout
-        )
+        val navController =
+            navHostFragment.navController
 
-        ViewCompat.setOnApplyWindowInsetsListener(
-            rootView
-        ) { view, insets ->
-
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars()
+        val bottomNavigation =
+            findViewById<BottomNavigationView>(
+                R.id.bottom_navigation
             )
 
-            val density =
-                view.resources.displayMetrics.density
+        ViewCompat.setOnApplyWindowInsetsListener(
+            bottomNavigation
+        ) { view, insets ->
 
-            val horizontalPadding =
-                (16 * density).toInt()
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
 
-            view.setPaddingRelative(
-                horizontalPadding,
-                systemBars.top,
-                horizontalPadding,
-                horizontalPadding + systemBars.bottom
+            view.setPadding(
+                view.paddingLeft,
+                view.paddingTop,
+                view.paddingRight,
+                systemBars.bottom
             )
 
             insets
         }
 
-        val searchButton =
-            findViewById<MaterialButton>(
-                R.id.btn_search
-            )
-
-        val mediaLibraryButton =
-            findViewById<MaterialButton>(
-                R.id.btn_media
-            )
-
-        val settingsButton =
-            findViewById<MaterialButton>(
-                R.id.btn_settings
-            )
-
-        searchButton.setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    SearchActivity::class.java
-                )
-            )
-        }
-
-        mediaLibraryButton.setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    MediaLibraryActivity::class.java
-                )
-            )
-        }
-
-        settingsButton.setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    SettingsActivity::class.java
-                )
-            )
-        }
+        bottomNavigation.setupWithNavController(
+            navController
+        )
     }
 }
