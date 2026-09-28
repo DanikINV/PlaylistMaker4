@@ -1,14 +1,16 @@
 package com.example.playlistmaker.presentation.model
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.playlistmaker.domain.interactors.HistoryInteractor
-import com.example.playlistmaker.domain.interactors.SearchConsumer
 import com.example.playlistmaker.domain.interactors.SearchInteractor
 import com.example.playlistmaker.domain.model.Track
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class SearchViewModel(
     private val searchInteractor: SearchInteractor,
@@ -21,27 +23,19 @@ class SearchViewModel(
 
     val state: LiveData<SearchScreenState> = _state
 
-    private val handler = Handler(
-        Looper.getMainLooper()
-    )
-
     private var searchQuery = ""
     private var hasSearchFocus = false
 
-    private var searchRequestId = 0L
-
-    private val searchRunnable = Runnable {
-        if (searchQuery.isNotEmpty()) {
-            performSearch(searchQuery)
-        }
-    }
+    private var searchDebounceJob: Job? = null
+    private var searchRequestJob: Job? = null
+    private var trackClickJob: Job? = null
 
     fun onQueryChanged(query: String) {
 
         searchQuery = query
-        searchRequestId++
 
-        handler.removeCallbacks(searchRunnable)
+        searchDebounceJob?.cancel()
+        searchRequestJob?.cancel()
 
         updateState {
             it.copy(
@@ -55,10 +49,14 @@ class SearchViewModel(
         if (query.isEmpty()) {
             updateHistory()
         } else {
-            handler.postDelayed(
-                searchRunnable,
-                SEARCH_DEBOUNCE_DELAY_MS
-            )
+            searchDebounceJob = viewModelScope.launch {
+
+                delay(SEARCH_DEBOUNCE_DELAY_MS)
+
+                if (searchQuery.isNotEmpty()) {
+                    performSearch(searchQuery)
+                }
+            }
         }
     }
 
@@ -71,7 +69,7 @@ class SearchViewModel(
 
     fun searchNow() {
 
-        handler.removeCallbacks(searchRunnable)
+        searchDebounceJob?.cancel()
 
         if (searchQuery.isNotEmpty()) {
             performSearch(searchQuery)
@@ -104,12 +102,19 @@ class SearchViewModel(
 
     fun onTrackSelected(track: Track) {
 
-        historyInteractor.addTrack(track)
+        trackClickJob?.cancel()
 
-        updateState {
-            it.copy(
-                selectedTrack = track
-            )
+        trackClickJob = viewModelScope.launch {
+
+            delay(TRACK_CLICK_DEBOUNCE_DELAY_MS)
+
+            historyInteractor.addTrack(track)
+
+            updateState {
+                it.copy(
+                    selectedTrack = track
+                )
+            }
         }
     }
 
@@ -156,7 +161,7 @@ class SearchViewModel(
 
     private fun performSearch(query: String) {
 
-        val requestId = ++searchRequestId
+        searchRequestJob?.cancel()
 
         updateState {
             it.copy(
@@ -166,49 +171,40 @@ class SearchViewModel(
             )
         }
 
-        searchInteractor.search(
-            query = query,
-            consumer = object : SearchConsumer {
+        searchRequestJob = viewModelScope.launch {
 
-                override fun consume(
-                    tracks: List<Track>
-                ) {
+            searchInteractor
+                .search(query)
+                .collect { result ->
 
-                    if (requestId != searchRequestId) {
-                        return
-                    }
+                    result
+                        .onSuccess { tracks ->
 
-                    updateState {
+                            updateState {
+                                it.copy(
+                                    tracks = tracks,
+                                    content =
+                                        if (tracks.isNotEmpty()) {
+                                            SearchContent.TRACKS
+                                        } else {
+                                            SearchContent.NOTHING_FOUND
+                                        },
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        .onFailure {
 
-                        it.copy(
-                            tracks = tracks,
-                            content =
-                                if (tracks.isNotEmpty()) {
-                                    SearchContent.TRACKS
-                                } else {
-                                    SearchContent.NOTHING_FOUND
-                                },
-                            isLoading = false
-                        )
-                    }
+                            updateState {
+                                it.copy(
+                                    tracks = emptyList(),
+                                    content = SearchContent.ERROR,
+                                    isLoading = false
+                                )
+                            }
+                        }
                 }
-
-                override fun consumeError() {
-
-                    if (requestId != searchRequestId) {
-                        return
-                    }
-
-                    updateState {
-                        it.copy(
-                            tracks = emptyList(),
-                            content = SearchContent.ERROR,
-                            isLoading = false
-                        )
-                    }
-                }
-            }
-        )
+        }
     }
 
     private fun updateState(
@@ -221,9 +217,9 @@ class SearchViewModel(
 
     override fun onCleared() {
 
-        handler.removeCallbacks(
-            searchRunnable
-        )
+        searchDebounceJob?.cancel()
+        searchRequestJob?.cancel()
+        trackClickJob?.cancel()
 
         super.onCleared()
     }
@@ -231,5 +227,6 @@ class SearchViewModel(
     companion object {
 
         private const val SEARCH_DEBOUNCE_DELAY_MS = 2000L
+        private const val TRACK_CLICK_DEBOUNCE_DELAY_MS = 1000L
     }
 }

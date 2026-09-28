@@ -3,53 +3,40 @@ package com.example.playlistmaker.data.repository
 import com.example.playlistmaker.data.dto.TracksResponseDto
 import com.example.playlistmaker.data.dto.toDomain
 import com.example.playlistmaker.data.network.ITunesApi
-import com.example.playlistmaker.domain.interactors.SearchConsumer
+import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.domain.repository.SearchRepository
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class SearchRepositoryImpl(
     private val service: ITunesApi
 ) : SearchRepository {
 
     override fun search(
-        query: String,
-        consumer: SearchConsumer
-    ) {
+        query: String
+    ): Flow<Result<List<Track>>> = flow {
 
-        service.search(query).enqueue(
-            object : Callback<TracksResponseDto> {
+        try {
+            val response = service.search(query)
 
-                override fun onResponse(
-                    call: Call<TracksResponseDto>,
-                    response: Response<TracksResponseDto>
-                ) {
-
-                    if (!response.isSuccessful) {
-                        consumer.consumeError()
-                        return
-                    }
-
-                    val tracks = response.body()
-                        ?.results
-                        ?.map { it.toDomain() }
-                        .orEmpty()
-
-                    consumer.consume(tracks)
-                }
-
-                override fun onFailure(
-                    call: Call<TracksResponseDto>,
-                    t: Throwable
-                ) {
-                    if (call.isCanceled) {
-                        return
-                    }
-
-                    consumer.consumeError()
-                }
+            if (!response.isSuccessful) {
+                emit(
+                    Result.failure(
+                        Exception("HTTP ${response.code()}")
+                    )
+                )
+                return@flow
             }
-        )
+
+            val tracks = response.body()
+                ?.results
+                ?.map { it.toDomain() }
+                .orEmpty()
+
+            emit(Result.success(tracks))
+
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
     }
 }
