@@ -19,10 +19,10 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
 import com.example.playlistmaker.domain.model.Track
-import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.example.playlistmaker.presentation.model.PlayerPlaybackState
 import com.example.playlistmaker.presentation.model.PlayerScreenState
 import com.example.playlistmaker.presentation.model.PlayerViewModel
+import com.example.playlistmaker.presentation.model.TrackParcelable
 import java.text.SimpleDateFormat
 import java.util.Locale
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -35,6 +35,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private lateinit var btnPlay: ImageView
+    private lateinit var btnFavorite: ImageView
     private lateinit var tvProgress: TextView
 
     private val timeFormat =
@@ -98,6 +99,10 @@ class PlayerActivity : AppCompatActivity() {
             R.id.btn_play
         )
 
+        btnFavorite = findViewById(
+            R.id.btn_favorite
+        )
+
         tvProgress = findViewById(
             R.id.tv_progress
         )
@@ -122,6 +127,10 @@ class PlayerActivity : AppCompatActivity() {
 
         btnPlay.setOnClickListener {
             viewModel.onPlayClicked()
+        }
+
+        btnFavorite.setOnClickListener {
+            viewModel.onFavoriteClicked()
         }
 
         viewModel.state.observe(
@@ -152,6 +161,14 @@ class PlayerActivity : AppCompatActivity() {
 
         btnPlay.isEnabled =
             state.isPlayEnabled
+
+        btnFavorite.setImageResource(
+            if (state.track.isFavorite) {
+                R.drawable.ic_favorite
+            } else {
+                R.drawable.ic_favorite_border
+            }
+        )
 
         when (
             state.playbackState
@@ -279,10 +296,7 @@ class PlayerActivity : AppCompatActivity() {
             return null
         }
 
-        return releaseDate.substring(
-            0,
-            4
-        )
+        return releaseDate.take(4)
     }
 
     private fun setPlayButtonIcon(

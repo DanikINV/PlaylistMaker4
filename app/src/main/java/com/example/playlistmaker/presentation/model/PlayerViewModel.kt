@@ -6,17 +6,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.playlistmaker.domain.interactors.FavoriteTrackInteractor
 import com.example.playlistmaker.domain.interactors.PlayerInteractor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class PlayerViewModel(
-    private val playerInteractor: PlayerInteractor
+    private val playerInteractor: PlayerInteractor,
+    private val favoriteTrackInteractor: FavoriteTrackInteractor
 ) : ViewModel() {
 
-    private val track = playerInteractor.getTrack()
+    private var track = playerInteractor.getTrack()
 
     private val _state = MutableLiveData(
         PlayerScreenState(
@@ -29,6 +33,8 @@ class PlayerViewModel(
     private var mediaPlayer: MediaPlayer? = null
 
     private var progressJob: Job? = null
+
+    private val favoriteMutex = Mutex()
 
     fun preparePlayer() {
 
@@ -138,6 +144,27 @@ class PlayerViewModel(
         }
 
         progressJob?.cancel()
+    }
+
+    fun onFavoriteClicked() {
+
+        viewModelScope.launch {
+
+            favoriteMutex.withLock {
+
+                if (track.isFavorite) {
+                    favoriteTrackInteractor.deleteTrack(track)
+                } else {
+                    favoriteTrackInteractor.addTrack(track)
+                }
+
+                track.isFavorite = !track.isFavorite
+
+                _state.value = _state.value?.copy(
+                    track = track
+                )
+            }
+        }
     }
 
     private fun updateProgress() {

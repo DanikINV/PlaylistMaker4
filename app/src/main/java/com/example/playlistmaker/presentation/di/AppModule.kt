@@ -2,12 +2,16 @@ package com.example.playlistmaker.presentation.di
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.playlistmaker.data.db.FavoriteTracksDatabase
 import com.example.playlistmaker.data.network.ITunesApi
+import com.example.playlistmaker.data.repository.FavoriteTrackRepositoryImpl
 import com.example.playlistmaker.data.repository.HistoryRepositoryImpl
 import com.example.playlistmaker.data.repository.SearchRepositoryImpl
 import com.example.playlistmaker.data.repository.SettingsRepositoryImpl
 import com.example.playlistmaker.data.storage.SearchHistoryStorage
 import com.example.playlistmaker.data.storage.SettingsStorage
+import com.example.playlistmaker.domain.interactors.FavoriteTrackInteractor
+import com.example.playlistmaker.domain.interactors.FavoriteTrackInteractorImpl
 import com.example.playlistmaker.domain.interactors.HistoryInteractor
 import com.example.playlistmaker.domain.interactors.HistoryInteractorImpl
 import com.example.playlistmaker.domain.interactors.PlayerInteractor
@@ -17,10 +21,13 @@ import com.example.playlistmaker.domain.interactors.SearchInteractorImpl
 import com.example.playlistmaker.domain.interactors.SettingsInteractor
 import com.example.playlistmaker.domain.interactors.SettingsInteractorImpl
 import com.example.playlistmaker.domain.model.Track
+import com.example.playlistmaker.domain.repository.FavoriteTrackRepository
 import com.example.playlistmaker.domain.repository.HistoryRepository
 import com.example.playlistmaker.domain.repository.SearchRepository
 import com.example.playlistmaker.domain.repository.SettingsRepository
+import com.example.playlistmaker.presentation.model.FavoritesViewModel
 import com.example.playlistmaker.presentation.model.PlayerViewModel
+import com.example.playlistmaker.presentation.model.PlaylistsViewModel
 import com.example.playlistmaker.presentation.model.SearchViewModel
 import com.example.playlistmaker.presentation.model.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
@@ -29,8 +36,6 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import com.example.playlistmaker.presentation.model.PlaylistsViewModel
-import com.example.playlistmaker.presentation.model.FavoritesViewModel
 
 val appModule = module {
 
@@ -59,7 +64,10 @@ val appModule = module {
     }
 
     single<SearchRepository> {
-        SearchRepositoryImpl(get())
+        SearchRepositoryImpl(
+            service = get(),
+            database = get<FavoriteTracksDatabase>()
+        )
     }
 
     factory<SearchInteractor> {
@@ -86,6 +94,14 @@ val appModule = module {
         PlayerInteractorImpl(params.get())
     }
 
+    factory<FavoriteTrackInteractor> {
+        FavoriteTrackInteractorImpl(get())
+    }
+
+    single<FavoriteTrackRepository> {
+        FavoriteTrackRepositoryImpl(get())
+    }
+
     viewModel {
         SearchViewModel(
             searchInteractor = get(),
@@ -101,7 +117,8 @@ val appModule = module {
 
     viewModel { params ->
         PlayerViewModel(
-            playerInteractor = get { parametersOf(params.get<Track>()) }
+            playerInteractor = get { parametersOf(params.get<Track>()) },
+            favoriteTrackInteractor = get()
         )
     }
 
@@ -110,6 +127,8 @@ val appModule = module {
     }
 
     viewModel {
-        FavoritesViewModel()
+        FavoritesViewModel(
+            favoriteTrackInteractor = get()
+        )
     }
 }
