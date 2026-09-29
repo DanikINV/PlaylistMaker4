@@ -10,4 +10,6 @@ interface FavoriteTrackRepository {
     suspend fun deleteTrack(track: Track)
 
     fun getFavoriteTracks(): Flow<List<Track>>
+
+    suspend fun isFavorite(trackId: Long): Boolean
 }

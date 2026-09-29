@@ -54,4 +54,8 @@ class FavoriteTrackRepositoryImpl(
                 }
             }
     }
+
+    override suspend fun isFavorite(trackId: Long): Boolean {
+        return favoriteTrackDao.isFavorite(trackId)
+    }
 }

@@ -65,8 +65,7 @@ val appModule = module {
 
     single<SearchRepository> {
         SearchRepositoryImpl(
-            service = get(),
-            database = get<FavoriteTracksDatabase>()
+            service = get()
         )
     }
 

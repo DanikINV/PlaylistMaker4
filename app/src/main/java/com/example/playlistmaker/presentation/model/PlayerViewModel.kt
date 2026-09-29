@@ -31,40 +31,48 @@ class PlayerViewModel(
     val state: LiveData<PlayerScreenState> = _state
 
     private var mediaPlayer: MediaPlayer? = null
-
     private var progressJob: Job? = null
 
     private val favoriteMutex = Mutex()
 
-    fun preparePlayer() {
+    init {
+        loadFavoriteState()
+    }
 
-        if (mediaPlayer != null) {
-            return
+    private fun loadFavoriteState() {
+        viewModelScope.launch {
+            val isFavorite =
+                favoriteTrackInteractor.isFavorite(track.trackId)
+
+            track = track.copy(
+                isFavorite = isFavorite
+            )
+
+            _state.value = _state.value?.copy(
+                track = track
+            )
         }
+    }
+
+    fun preparePlayer() {
+        if (mediaPlayer != null) return
 
         val previewUrl = track.previewUrl
 
-        if (previewUrl.isNullOrEmpty()) {
-            return
-        }
+        if (previewUrl.isNullOrEmpty()) return
 
         mediaPlayer = MediaPlayer().apply {
 
             setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setContentType(
-                        AudioAttributes.CONTENT_TYPE_MUSIC
-                    )
-                    .setUsage(
-                        AudioAttributes.USAGE_MEDIA
-                    )
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
                     .build()
             )
 
             setDataSource(previewUrl)
 
             setOnPreparedListener {
-
                 _state.value = _state.value?.copy(
                     playbackState = PlayerPlaybackState.PREPARED,
                     isPlayEnabled = true,
@@ -73,7 +81,6 @@ class PlayerViewModel(
             }
 
             setOnCompletionListener {
-
                 _state.value = _state.value?.copy(
                     playbackState = PlayerPlaybackState.PREPARED,
                     progress = 0
@@ -99,7 +106,6 @@ class PlayerViewModel(
     }
 
     fun onPlayClicked() {
-
         val player = mediaPlayer ?: return
 
         when (_state.value?.playbackState) {
@@ -132,7 +138,6 @@ class PlayerViewModel(
     }
 
     fun onPause() {
-
         val player = mediaPlayer ?: return
 
         if (player.isPlaying) {
@@ -147,18 +152,22 @@ class PlayerViewModel(
     }
 
     fun onFavoriteClicked() {
-
         viewModelScope.launch {
 
             favoriteMutex.withLock {
 
-                if (track.isFavorite) {
+                val isFavorite =
+                    favoriteTrackInteractor.isFavorite(track.trackId)
+
+                if (isFavorite) {
                     favoriteTrackInteractor.deleteTrack(track)
                 } else {
                     favoriteTrackInteractor.addTrack(track)
                 }
 
-                track.isFavorite = !track.isFavorite
+                track = track.copy(
+                    isFavorite = !isFavorite
+                )
 
                 _state.value = _state.value?.copy(
                     track = track
@@ -168,7 +177,6 @@ class PlayerViewModel(
     }
 
     private fun updateProgress() {
-
         progressJob?.cancel()
 
         progressJob = viewModelScope.launch {
@@ -177,9 +185,7 @@ class PlayerViewModel(
 
                 val player = mediaPlayer ?: break
 
-                if (!player.isPlaying) {
-                    break
-                }
+                if (!player.isPlaying) break
 
                 _state.value = _state.value?.copy(
                     progress = player.currentPosition
@@ -191,7 +197,6 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
-
         progressJob?.cancel()
 
         mediaPlayer?.release()
