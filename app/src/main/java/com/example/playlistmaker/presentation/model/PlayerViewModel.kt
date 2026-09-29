@@ -2,12 +2,15 @@ package com.example.playlistmaker.presentation.model
 
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.playlistmaker.domain.interactors.PlayerInteractor
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class PlayerViewModel(
     private val playerInteractor: PlayerInteractor
@@ -25,9 +28,7 @@ class PlayerViewModel(
 
     private var mediaPlayer: MediaPlayer? = null
 
-    private val handler = Handler(
-        Looper.getMainLooper()
-    )
+    private var progressJob: Job? = null
 
     fun preparePlayer() {
 
@@ -72,10 +73,12 @@ class PlayerViewModel(
                     progress = 0
                 )
 
-                handler.removeCallbacksAndMessages(null)
+                progressJob?.cancel()
             }
 
             setOnErrorListener { _, _, _ ->
+
+                progressJob?.cancel()
 
                 _state.value = _state.value?.copy(
                     playbackState = PlayerPlaybackState.DEFAULT,
@@ -115,7 +118,7 @@ class PlayerViewModel(
                     playbackState = PlayerPlaybackState.PAUSED
                 )
 
-                handler.removeCallbacksAndMessages(null)
+                progressJob?.cancel()
             }
 
             else -> Unit
@@ -134,32 +137,35 @@ class PlayerViewModel(
             )
         }
 
-        handler.removeCallbacksAndMessages(null)
+        progressJob?.cancel()
     }
 
     private fun updateProgress() {
 
-        val player = mediaPlayer ?: return
+        progressJob?.cancel()
 
-        if (!player.isPlaying) {
-            return
+        progressJob = viewModelScope.launch {
+
+            while (isActive) {
+
+                val player = mediaPlayer ?: break
+
+                if (!player.isPlaying) {
+                    break
+                }
+
+                _state.value = _state.value?.copy(
+                    progress = player.currentPosition
+                )
+
+                delay(300)
+            }
         }
-
-        _state.value = _state.value?.copy(
-            progress = player.currentPosition
-        )
-
-        handler.postDelayed(
-            {
-                updateProgress()
-            },
-            300
-        )
     }
 
     override fun onCleared() {
 
-        handler.removeCallbacksAndMessages(null)
+        progressJob?.cancel()
 
         mediaPlayer?.release()
         mediaPlayer = null
