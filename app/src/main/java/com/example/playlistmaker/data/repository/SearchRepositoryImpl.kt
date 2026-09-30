@@ -1,6 +1,5 @@
 package com.example.playlistmaker.data.repository
 
-import com.example.playlistmaker.data.dto.TracksResponseDto
 import com.example.playlistmaker.data.dto.toDomain
 import com.example.playlistmaker.data.network.ITunesApi
 import com.example.playlistmaker.domain.model.Track
@@ -15,7 +14,6 @@ class SearchRepositoryImpl(
     override fun search(
         query: String
     ): Flow<Result<List<Track>>> = flow {
-
         try {
             val response = service.search(query)
 
@@ -30,7 +28,9 @@ class SearchRepositoryImpl(
 
             val tracks = response.body()
                 ?.results
-                ?.map { it.toDomain() }
+                ?.map { dto ->
+                    dto.toDomain()
+                }
                 .orEmpty()
 
             emit(Result.success(tracks))

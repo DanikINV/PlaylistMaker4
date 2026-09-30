@@ -113,8 +113,7 @@
             android:src="@drawable/ic_favorite_border"
             app:layout_constraintBottom_toBottomOf="@id/btn_play"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/btn_play"
-            app:tint="@color/player_layout_icon" />
+            app:layout_constraintTop_toTopOf="@id/btn_play" />
 
         <TextView
             android:id="@+id/tv_progress"
