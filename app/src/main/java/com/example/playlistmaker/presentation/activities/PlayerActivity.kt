@@ -13,22 +13,29 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
 import com.example.playlistmaker.domain.model.Track
+import com.example.playlistmaker.presentation.adapter.PlaylistSheetAdapter
+import com.example.playlistmaker.presentation.fragments.CreatePlaylistFragment
 import com.example.playlistmaker.presentation.model.PlayerPlaybackState
 import com.example.playlistmaker.presentation.model.PlayerScreenState
 import com.example.playlistmaker.presentation.model.PlayerViewModel
 import com.example.playlistmaker.presentation.model.TrackParcelable
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import java.text.SimpleDateFormat
 import java.util.Locale
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 
 class PlayerActivity : AppCompatActivity() {
+
+    private lateinit var track: Track
 
     private val viewModel: PlayerViewModel by viewModel {
         parametersOf(track)
@@ -38,6 +45,18 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnFavorite: ImageView
     private lateinit var tvProgress: TextView
 
+    private lateinit var playlistBottomSheet: View
+    private lateinit var playlistOverlay: View
+    private lateinit var playlistRecyclerView: RecyclerView
+    private lateinit var playlistCreatedNotification: TextView
+    private lateinit var playerFragmentContainer: View
+
+    private lateinit var bottomSheetBehavior:
+            BottomSheetBehavior<View>
+
+    private lateinit var playlistSheetAdapter:
+            PlaylistSheetAdapter
+
     private val timeFormat =
         SimpleDateFormat(
             "mm:ss",
@@ -46,9 +65,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private var boundTrackId: Long? = null
 
-    private lateinit var track: Track
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(
@@ -56,8 +77,23 @@ class PlayerActivity : AppCompatActivity() {
             false
         )
 
-        setContentView(R.layout.activity_player)
+        setContentView(
+            R.layout.activity_player
+        )
 
+        val trackParcelable =
+            intent.getParcelableExtra<TrackParcelable>(
+                EXTRA_TRACK
+            )
+
+        if (trackParcelable == null) {
+
+            finish()
+            return
+        }
+
+        track =
+            trackParcelable.toDomain()
         val isNightMode =
             resources.configuration.uiMode and
                     Configuration.UI_MODE_NIGHT_MASK ==
@@ -67,6 +103,7 @@ class PlayerActivity : AppCompatActivity() {
             window,
             window.decorView
         ).apply {
+
             isAppearanceLightStatusBars =
                 !isNightMode
         }
@@ -92,52 +129,293 @@ class PlayerActivity : AppCompatActivity() {
                 systemBars.bottom
             )
 
+
             insets
         }
 
-        btnPlay = findViewById(
-            R.id.btn_play
-        )
+        btnPlay =
+            findViewById(
+                R.id.btn_play
+            )
 
-        btnFavorite = findViewById(
-            R.id.btn_favorite
-        )
+        btnFavorite =
+            findViewById(
+                R.id.btn_favorite
+            )
 
-        tvProgress = findViewById(
-            R.id.tv_progress
-        )
+        tvProgress =
+            findViewById(
+                R.id.tv_progress
+            )
+
+        playlistBottomSheet =
+            findViewById(
+                R.id.playlist_bottom_sheet
+            )
+
+        playlistOverlay =
+            findViewById(
+                R.id.playlist_overlay
+            )
+
+        playlistRecyclerView =
+            findViewById(
+                R.id.rv_playlist_sheet
+            )
+
+        playlistCreatedNotification =
+            findViewById(
+                R.id.playlist_created_notification
+            )
+
+        playerFragmentContainer =
+            findViewById(
+                R.id.player_fragment_container
+            )
+
+        playlistCreatedNotification.visibility =
+            View.GONE
+
+        playerFragmentContainer.visibility =
+            View.GONE
+
+        setupPlaylistBottomSheet()
 
         findViewById<ImageView>(
             R.id.btn_back
         ).setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+
+            onBackPressedDispatcher
+                .onBackPressed()
         }
-
-        val trackParcelable =
-            intent.getParcelableExtra<TrackParcelable>(
-                EXTRA_TRACK
-            ) ?: run {
-                finish()
-                return
-            }
-
-        track = trackParcelable.toDomain()
 
         viewModel.preparePlayer()
 
         btnPlay.setOnClickListener {
+
             viewModel.onPlayClicked()
         }
 
         btnFavorite.setOnClickListener {
+
             viewModel.onFavoriteClicked()
+        }
+
+        findViewById<ImageView>(
+            R.id.btn_add_to_playlist
+        ).setOnClickListener {
+
+            openPlaylistBottomSheet()
         }
 
         viewModel.state.observe(
             this
         ) { state ->
-            renderState(state)
+
+            renderState(
+                state
+            )
         }
+
+        viewModel.playlists.observe(
+            this
+        ) { playlists ->
+
+            playlistSheetAdapter.setPlaylists(
+                playlists
+            )
+        }
+
+        viewModel.playlistAdded.observe(
+            this
+        ) { message ->
+
+            showPlaylistNotification(
+                message
+            )
+        }
+    }
+
+    private fun setupPlaylistBottomSheet() {
+
+        playlistSheetAdapter =
+            PlaylistSheetAdapter { playlist ->
+
+                viewModel.addTrackToPlaylist(
+                    playlist
+                )
+
+                bottomSheetBehavior.state =
+                    BottomSheetBehavior.STATE_HIDDEN
+
+                playlistBottomSheet.visibility =
+                    View.GONE
+
+                playlistOverlay.visibility =
+                    View.GONE
+            }
+
+        playlistRecyclerView.layoutManager =
+            LinearLayoutManager(this)
+
+        playlistRecyclerView.adapter =
+            playlistSheetAdapter
+
+        bottomSheetBehavior =
+            BottomSheetBehavior.from(
+                playlistBottomSheet
+            ).apply {
+
+                state =
+                    BottomSheetBehavior.STATE_HIDDEN
+
+                isHideable =
+                    true
+
+                skipCollapsed =
+                    true
+
+                isFitToContents =
+                    true
+            }
+
+        findViewById<View>(
+            R.id.btn_new_playlist
+        ).setOnClickListener {
+
+            bottomSheetBehavior.state =
+                BottomSheetBehavior.STATE_HIDDEN
+
+            playlistBottomSheet.visibility =
+                View.GONE
+
+            playlistOverlay.visibility =
+                View.GONE
+
+            playlistOverlay.alpha =
+                0f
+
+            playerFragmentContainer.visibility =
+                View.VISIBLE
+
+            supportFragmentManager
+                .beginTransaction()
+                .replace(
+                    R.id.player_fragment_container,
+                    CreatePlaylistFragment()
+                )
+                .addToBackStack(null)
+                .commit()
+        }
+
+        bottomSheetBehavior.addBottomSheetCallback(
+
+            object :
+                BottomSheetBehavior.BottomSheetCallback() {
+
+                override fun onStateChanged(
+                    bottomSheet: View,
+                    newState: Int
+                ) {
+
+                    if (
+                        newState ==
+                        BottomSheetBehavior.STATE_HIDDEN
+                    ) {
+
+                        playlistOverlay.visibility =
+                            View.GONE
+
+                        playlistOverlay.alpha =
+                            0f
+
+                    } else {
+
+                        playlistBottomSheet.visibility =
+                            View.VISIBLE
+
+                        playlistOverlay.visibility =
+                            View.VISIBLE
+
+                        playlistOverlay.alpha =
+                            1f
+                    }
+                }
+
+                override fun onSlide(
+                    bottomSheet: View,
+                    slideOffset: Float
+                ) {
+
+                    playlistOverlay.alpha =
+                        slideOffset
+                            .coerceIn(0f, 1f)
+                }
+            }
+        )
+
+        playlistOverlay.setOnClickListener {
+
+            bottomSheetBehavior.state =
+                BottomSheetBehavior.STATE_HIDDEN
+
+            playlistBottomSheet.visibility =
+                View.GONE
+        }
+    }
+    private fun openPlaylistBottomSheet() {
+
+        playlistBottomSheet.visibility =
+            View.VISIBLE
+
+        viewModel.loadPlaylists()
+
+        playlistOverlay.visibility =
+            View.VISIBLE
+
+        playlistOverlay.alpha =
+            1f
+
+        playlistBottomSheet.post {
+
+            bottomSheetBehavior.state =
+                BottomSheetBehavior.STATE_EXPANDED
+        }
+    }
+
+    private fun showPlaylistNotification(
+        message: String
+    ) {
+
+
+        playlistCreatedNotification.text =
+            message
+
+        playlistCreatedNotification.visibility =
+            View.VISIBLE
+
+        playlistCreatedNotification.alpha =
+            1f
+
+        playlistCreatedNotification.bringToFront()
+
+        playlistCreatedNotification.postDelayed({
+
+            playlistCreatedNotification
+                .animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction {
+
+                    playlistCreatedNotification.visibility =
+                        View.GONE
+
+                    playlistCreatedNotification.alpha =
+                        1f
+                }
+                .start()
+
+        }, 2500)
     }
 
     private fun renderState(
@@ -145,10 +423,13 @@ class PlayerActivity : AppCompatActivity() {
     ) {
 
         if (
-            boundTrackId != state.track.trackId
+            boundTrackId !=
+            state.track.trackId
         ) {
 
-            bindTrack(state.track)
+            bindTrack(
+                state.track
+            )
 
             boundTrackId =
                 state.track.trackId
@@ -163,9 +444,13 @@ class PlayerActivity : AppCompatActivity() {
             state.isPlayEnabled
 
         btnFavorite.setImageResource(
+
             if (state.track.isFavorite) {
+
                 R.drawable.ic_favorite
+
             } else {
+
                 R.drawable.ic_favorite_border
             }
         )
@@ -175,13 +460,19 @@ class PlayerActivity : AppCompatActivity() {
         ) {
 
             PlayerPlaybackState.PLAYING -> {
-                setPlayButtonIcon(true)
+
+                setPlayButtonIcon(
+                    true
+                )
             }
 
             PlayerPlaybackState.PREPARED,
             PlayerPlaybackState.PAUSED,
             PlayerPlaybackState.DEFAULT -> {
-                setPlayButtonIcon(false)
+
+                setPlayButtonIcon(
+                    false
+                )
             }
         }
     }
@@ -192,17 +483,20 @@ class PlayerActivity : AppCompatActivity() {
 
         findViewById<TextView>(
             R.id.tv_track_name
-        ).text = track.trackName
+        ).text =
+            track.trackName
 
         findViewById<TextView>(
             R.id.tv_artist_name
-        ).text = track.artistName
+        ).text =
+            track.artistName
 
         findViewById<TextView>(
             R.id.tv_duration_value
-        ).text = timeFormat.format(
-            track.trackTime
-        )
+        ).text =
+            timeFormat.format(
+                track.trackTime
+            )
 
         bindOptionalRow(
             R.id.row_album,
@@ -236,24 +530,33 @@ class PlayerActivity : AppCompatActivity() {
             )
 
         Glide.with(this)
+
             .load(
                 track.getCoverArtwork()
             )
+
             .placeholder(
                 R.drawable.vector
             )
+
             .error(
                 R.drawable.vector
             )
+
             .transform(
+
                 MultiTransformation(
+
                     CenterCrop(),
+
                     RoundedCorners(
                         cornerRadiusPx
                     )
                 )
             )
+
             .into(
+
                 findViewById(
                     R.id.iv_artwork
                 )
@@ -267,7 +570,9 @@ class PlayerActivity : AppCompatActivity() {
     ) {
 
         val row =
-            findViewById<View>(rowId)
+            findViewById<View>(
+                rowId
+            )
 
         if (value.isNullOrBlank()) {
 
@@ -281,7 +586,8 @@ class PlayerActivity : AppCompatActivity() {
 
             findViewById<TextView>(
                 valueViewId
-            ).text = value
+            ).text =
+                value
         }
     }
 
@@ -293,6 +599,7 @@ class PlayerActivity : AppCompatActivity() {
             releaseDate.isNullOrBlank() ||
             releaseDate.length < 4
         ) {
+
             return null
         }
 
@@ -304,22 +611,29 @@ class PlayerActivity : AppCompatActivity() {
     ) {
 
         btnPlay.setImageResource(
+
             if (isPlaying) {
+
                 R.drawable.ic_pause_button
+
             } else {
+
                 R.drawable.ic_play_button
             }
         )
     }
 
     override fun onPause() {
+
         super.onPause()
 
         viewModel.onPause()
     }
 
+
     companion object {
 
-        const val EXTRA_TRACK = "EXTRA_TRACK"
+        const val EXTRA_TRACK =
+            "EXTRA_TRACK"
     }
 }

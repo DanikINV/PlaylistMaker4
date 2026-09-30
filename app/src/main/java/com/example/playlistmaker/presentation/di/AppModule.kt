@@ -2,7 +2,6 @@ package com.example.playlistmaker.presentation.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.playlistmaker.data.db.FavoriteTracksDatabase
 import com.example.playlistmaker.data.network.ITunesApi
 import com.example.playlistmaker.data.repository.FavoriteTrackRepositoryImpl
 import com.example.playlistmaker.data.repository.HistoryRepositoryImpl
@@ -16,6 +15,8 @@ import com.example.playlistmaker.domain.interactors.HistoryInteractor
 import com.example.playlistmaker.domain.interactors.HistoryInteractorImpl
 import com.example.playlistmaker.domain.interactors.PlayerInteractor
 import com.example.playlistmaker.domain.interactors.PlayerInteractorImpl
+import com.example.playlistmaker.domain.interactors.PlaylistInteractor
+import com.example.playlistmaker.domain.interactors.PlaylistInteractorImpl
 import com.example.playlistmaker.domain.interactors.SearchInteractor
 import com.example.playlistmaker.domain.interactors.SearchInteractorImpl
 import com.example.playlistmaker.domain.interactors.SettingsInteractor
@@ -36,6 +37,7 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+
 
 val appModule = module {
 
@@ -97,6 +99,12 @@ val appModule = module {
         FavoriteTrackInteractorImpl(get())
     }
 
+    factory<PlaylistInteractor> {
+        PlaylistInteractorImpl(
+            repository = get()
+        )
+    }
+
     single<FavoriteTrackRepository> {
         FavoriteTrackRepositoryImpl(get())
     }
@@ -117,12 +125,15 @@ val appModule = module {
     viewModel { params ->
         PlayerViewModel(
             playerInteractor = get { parametersOf(params.get<Track>()) },
-            favoriteTrackInteractor = get()
+            favoriteTrackInteractor = get(),
+            playlistInteractor = get()
         )
     }
 
     viewModel {
-        PlaylistsViewModel()
+        PlaylistsViewModel(
+            playlistInteractor = get()
+        )
     }
 
     viewModel {

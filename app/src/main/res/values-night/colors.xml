@@ -2,6 +2,8 @@
 <resources>
     <color name="blue_primary">#1A1B22</color>
     <color name="white_primary">#1A1B22</color>
+    <color name="notification">#FFFFFF</color>
+    <color name="notification_text">#000000</color>
     <color name="white">#000000</color>
     <color name="black">#FFFFFF</color>
     <color name="blackSearch">#000000</color>
@@ -20,4 +22,7 @@
     <color name="bottom_navigation_active">#3772E7</color>
     <color name="bottom_navigation_inactive">#FFFFFF</color>
     <color name="bottom_divider">#3A3A3A</color>
+    <color name="edit_text_border">#5F6068</color>
+    <color name="edit_text_text">#FFFFFF</color>
+    <color name="edit_text_hint">#AEAFB4</color>
 </resources>

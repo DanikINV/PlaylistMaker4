@@ -9,7 +9,12 @@
     <fragment
         android:id="@+id/mediaLibraryFragment"
         android:name="com.example.playlistmaker.presentation.fragments.MediaLibraryFragment"
-        android:label="@string/media_library" />
+        android:label="@string/media_library">
+
+        <action
+            android:id="@+id/action_mediaLibraryFragment_to_createPlaylistFragment"
+            app:destination="@id/createPlaylistFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/searchFragment"
@@ -20,5 +25,10 @@
         android:id="@+id/settingsFragment"
         android:name="com.example.playlistmaker.presentation.fragments.SettingsFragment"
         android:label="@string/settings" />
+
+    <fragment
+        android:id="@+id/createPlaylistFragment"
+        android:name="com.example.playlistmaker.presentation.fragments.CreatePlaylistFragment"
+        android:label="@string/create_playlist" />
 
 </navigation>
