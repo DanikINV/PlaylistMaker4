@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -226,25 +227,30 @@ class PlayerActivity : AppCompatActivity() {
             )
         }
 
-        viewModel.playlistAdded.observe(
-            this
-        ) { message ->
+        viewModel.playlistAdded.observe(this) { result ->
 
-            showPlaylistNotification(
-                message
-            )
-        }
-    }
+            val added = result.first
+            val playlistName = result.second
 
-    private fun setupPlaylistBottomSheet() {
-
-        playlistSheetAdapter =
-            PlaylistSheetAdapter { playlist ->
-
-                viewModel.addTrackToPlaylist(
-                    playlist
+            val message = if (added) {
+                getString(
+                    R.string.track_added_to_playlist,
+                    playlistName
                 )
+            } else {
+                getString(
+                    R.string.track_already_added_to_playlist,
+                    playlistName
+                )
+            }
 
+            Toast.makeText(
+                this,
+                message,
+                Toast.LENGTH_SHORT
+            ).show()
+
+            if (added) {
                 bottomSheetBehavior.state =
                     BottomSheetBehavior.STATE_HIDDEN
 
@@ -253,7 +259,18 @@ class PlayerActivity : AppCompatActivity() {
 
                 playlistOverlay.visibility =
                     View.GONE
+
+                playlistOverlay.alpha =
+                    0f
             }
+        }
+    }
+
+    private fun setupPlaylistBottomSheet() {
+
+        playlistSheetAdapter = PlaylistSheetAdapter { playlist ->
+            viewModel.addTrackToPlaylist(playlist)
+        }
 
         playlistRecyclerView.layoutManager =
             LinearLayoutManager(this)

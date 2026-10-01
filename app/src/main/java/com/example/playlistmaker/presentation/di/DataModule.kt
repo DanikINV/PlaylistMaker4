@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.room.Room
 import com.example.playlistmaker.data.db.FavoriteTrackDao
 import com.example.playlistmaker.data.db.FavoriteTracksDatabase
+import com.example.playlistmaker.data.db.PlaylistTrackDao
 import com.example.playlistmaker.data.repository.PlaylistRepositoryImpl
 import com.example.playlistmaker.data.repository.SettingsRepositoryImpl
 import com.example.playlistmaker.domain.interactors.SettingsInteractor
@@ -14,7 +15,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val dataModule = module {
-
     single {
         Room.databaseBuilder(
             androidContext(),
@@ -29,39 +29,33 @@ val dataModule = module {
         get<FavoriteTracksDatabase>().favoriteTrackDao()
     }
 
-    single<PlaylistRepository> {
-        PlaylistRepositoryImpl(
-            get()
-        )
+    single {
+        get<FavoriteTracksDatabase>().playlistDao()
     }
 
-    single {
-        get<FavoriteTracksDatabase>()
-            .playlistDao()
+    single<PlaylistTrackDao> {
+        get<FavoriteTracksDatabase>().playlistTrackDao()
+    }
+
+    single<PlaylistRepository> {
+        PlaylistRepositoryImpl(
+            playlistDao = get(),
+            playlistTrackDao = get()
+        )
     }
 
     single<SharedPreferences> {
-
-        androidContext()
-            .getSharedPreferences(
-                "settings",
-                android.content.Context.MODE_PRIVATE
-            )
+        androidContext().getSharedPreferences(
+            "settings",
+            android.content.Context.MODE_PRIVATE
+        )
     }
-
 
     single<SettingsRepository> {
-
-        SettingsRepositoryImpl(
-            get()
-        )
+        SettingsRepositoryImpl(get())
     }
 
-
     factory<SettingsInteractor> {
-
-        SettingsInteractorImpl(
-            get()
-        )
+        SettingsInteractorImpl(get())
     }
 }

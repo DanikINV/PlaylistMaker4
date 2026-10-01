@@ -25,4 +25,5 @@
     <color name="edit_text_border">#5F6068</color>
     <color name="edit_text_text">#FFFFFF</color>
     <color name="edit_text_hint">#AEAFB4</color>
+    <color name="text_primary">#FFFFFF</color>
 </resources>
