@@ -27,4 +27,5 @@
     <color name="edit_text_hint">#AEAFB4</color>
     <color name="text_primary">#1A1B22</color>
     <color name="text_secondary">#AEAFB4</color>
+    <color name="white_crate_playlist">#FFFFFF</color>
 </resources>

@@ -163,7 +163,7 @@ class CreatePlaylistFragment :
 
         binding.btnCreatePlaylist.setTextColor(
             resources.getColor(
-                R.color.white,
+                R.color.white_crate_playlist,
                 requireContext().theme
             )
         )
@@ -218,13 +218,6 @@ class CreatePlaylistFragment :
         }
     }
 
-    /**
-     * Копирует изображение из выбранного Uri
-     * во внутреннее хранилище приложения.
-     *
-     * В базе данных сохраняется абсолютный путь
-     * к копии файла, а не Uri галереи.
-     */
     private suspend fun copyImageToInternalStorage(
         uri: Uri
     ): String? {
