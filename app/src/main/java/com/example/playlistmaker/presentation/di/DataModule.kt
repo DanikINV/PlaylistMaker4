@@ -14,6 +14,7 @@ import com.example.playlistmaker.domain.repository.SettingsRepository
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
+
 val dataModule = module {
     single {
         Room.databaseBuilder(
@@ -39,8 +40,7 @@ val dataModule = module {
 
     single<PlaylistRepository> {
         PlaylistRepositoryImpl(
-            playlistDao = get(),
-            playlistTrackDao = get()
+            database = get()
         )
     }
 

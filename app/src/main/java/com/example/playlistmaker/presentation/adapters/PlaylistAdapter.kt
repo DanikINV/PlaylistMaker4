@@ -79,12 +79,15 @@ class PlaylistAdapter(
                         Configuration.UI_MODE_NIGHT_YES
 
             if (isNightMode) {
+
                 binding.tvPlaylistName.setTextColor(
                     binding.root.context.getColor(
                         android.R.color.white
                     )
                 )
+
             } else {
+
                 binding.tvPlaylistName.setTextColor(
                     binding.root.context.getColor(
                         R.color.text_primary
@@ -135,6 +138,7 @@ class PlaylistAdapter(
             }
 
             binding.root.setOnClickListener {
+
                 onPlaylistClick(
                     playlist
                 )

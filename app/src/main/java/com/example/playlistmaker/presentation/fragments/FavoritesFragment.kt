@@ -14,80 +14,126 @@ import com.example.playlistmaker.presentation.model.FavoritesViewModel
 import com.example.playlistmaker.presentation.model.TrackParcelable
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class FavoritesFragment : Fragment(R.layout.fragment_favorites) {
+class FavoritesFragment :
+    Fragment(R.layout.fragment_favorites) {
 
-    private var _binding: FragmentFavoritesBinding? = null
-    private val binding get() = _binding!!
+    private var _binding:
+            FragmentFavoritesBinding? = null
 
-    private val viewModel: FavoritesViewModel by viewModel()
+    private val binding
+        get() = _binding!!
+
+    private val viewModel:
+            FavoritesViewModel by viewModel()
+
+    private lateinit var adapter:
+            TrackAdapter
 
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?
     ) {
-        super.onViewCreated(view, savedInstanceState)
+        super.onViewCreated(
+            view,
+            savedInstanceState
+        )
 
-        _binding = FragmentFavoritesBinding.bind(view)
+        _binding =
+            FragmentFavoritesBinding.bind(view)
 
         setupRecyclerView()
         observeFavoriteTracks()
     }
 
     private fun setupRecyclerView() {
+
         binding.rvFavorites.layoutManager =
-            LinearLayoutManager(requireContext())
+            LinearLayoutManager(
+                requireContext()
+            )
+
+        adapter = TrackAdapter(
+            onTrackClick = { track ->
+                openPlayer(track)
+            }
+        )
+
+        binding.rvFavorites.adapter =
+            adapter
     }
 
     private fun observeFavoriteTracks() {
+
         viewModel.favoriteTracks.observe(
             viewLifecycleOwner
         ) { tracks ->
 
             if (tracks.isEmpty()) {
+
                 showPlaceholder()
+
             } else {
+
                 showFavorites(tracks)
             }
         }
     }
 
     private fun showPlaceholder() {
-        binding.placeholderContainer.visibility = View.VISIBLE
-        binding.rvFavorites.visibility = View.GONE
+
+        binding.placeholderContainer.visibility =
+            View.VISIBLE
+
+        binding.rvFavorites.visibility =
+            View.GONE
     }
 
-    private fun showFavorites(tracks: List<Track>) {
-        binding.placeholderContainer.visibility = View.GONE
-        binding.rvFavorites.visibility = View.VISIBLE
+    private fun showFavorites(
+        tracks: List<Track>
+    ) {
 
-        binding.rvFavorites.adapter = TrackAdapter(
-            tracks = tracks
-        ) { track ->
-            openPlayer(track)
-        }
+        binding.placeholderContainer.visibility =
+            View.GONE
+
+        binding.rvFavorites.visibility =
+            View.VISIBLE
+
+        adapter.setTracks(
+            tracks
+        )
     }
 
-    private fun openPlayer(track: Track) {
-        val intent = Intent(
-            requireContext(),
-            PlayerActivity::class.java
-        ).apply {
-            putExtra(
-                PlayerActivity.EXTRA_TRACK,
-                TrackParcelable.fromDomain(track)
-            )
-        }
+    private fun openPlayer(
+        track: Track
+    ) {
+
+        val intent =
+            Intent(
+                requireContext(),
+                PlayerActivity::class.java
+            ).apply {
+
+                putExtra(
+                    PlayerActivity.EXTRA_TRACK,
+                    TrackParcelable.fromDomain(track)
+                )
+            }
 
         startActivity(intent)
     }
 
     override fun onDestroyView() {
+
         super.onDestroyView()
+
         _binding = null
     }
 
     companion object {
-        fun newInstance(): FavoritesFragment {
+
+        fun newInstance():
+                FavoritesFragment {
+
             return FavoritesFragment()
         }
     }
