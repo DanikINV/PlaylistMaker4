@@ -22,18 +22,22 @@
         android:name="com.example.playlistmaker.presentation.fragments.SearchFragment"
         android:label="@string/search" />
 
-
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.playlistmaker.presentation.fragments.SettingsFragment"
         android:label="@string/settings" />
 
-
     <fragment
         android:id="@+id/createPlaylistFragment"
         android:name="com.example.playlistmaker.presentation.fragments.CreatePlaylistFragment"
-        android:label="@string/create_playlist" />
+        android:label="@string/create_playlist">
 
+        <argument
+            android:name="playlistId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/playlistFragment"
@@ -46,22 +50,6 @@
 
     </fragment>
 
-    <fragment
-        android:id="@+id/editPlaylistFragment"
-        android:name="com.example.playlistmaker.presentation.fragments.EditPlaylistFragment"
-        android:label="@string/edit">
-
-        <argument
-            android:name="playlistId"
-            app:argType="long" />
-
-    </fragment>
-
-    <action
-        android:id="@+id/action_playlistFragment_to_editPlaylistFragment"
-        app:destination="@id/editPlaylistFragment" />
-
-    <!-- Переход из дочернего PlaylistsFragment -->
     <action
         android:id="@+id/action_global_createPlaylistFragment"
         app:destination="@id/createPlaylistFragment" />

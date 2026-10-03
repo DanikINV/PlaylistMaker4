@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <resources>
     <string name="app_name">Playlist maker</string>
     <string name="search">Поиск</string>
@@ -56,4 +57,18 @@
     <string name="playlist_info">%1$s мин • %2$d треков</string>
     <string name="playlist">Плейлист</string>
     <string name="edit">Редактировать</string>
+    <string name="empty_playlist">В этом плейлисте нет треков</string>
+    <string name="edit_playlist_info">Редактировать информацию</string>
+    <string name="delete_playlist">Удалить плейлист</string>
+    <string name="playlist_empty_share">В этом плейлисте нет списка треков, которым можно поделиться</string>
+    <string name="playlist_tracks_count">%1$d треков</string>
+    <string name="playlist_info_format">%1$s минут • %2$d треков</string>
+    <string name="delete_playlist_title">Удалить плейлист</string>
+    <string name="delete_playlist_message">Хотите удалить плейлист?</string>
+    <string name="no">Нет</string>
+    <string name="yes">Да</string>
+    <string name="delete_track_title">Удалить трек?</string>
+    <string name="delete_track_message">%1$s</string>
+    <string name="share_playlist">Поделиться плейлистом</string>
+    <string name="track_share_format">%1$d. %2$s — %3$s (%4$s)</string>
 </resources>

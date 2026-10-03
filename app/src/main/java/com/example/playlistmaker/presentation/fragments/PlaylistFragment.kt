@@ -1,32 +1,26 @@
 package com.example.playlistmaker.presentation.fragments
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
-import androidx.core.content.ContextCompat
+import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.playlistmaker.R
 import com.example.playlistmaker.databinding.FragmentPlaylistBinding
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.activities.PlayerActivity
 import com.example.playlistmaker.presentation.adapters.TrackAdapter
+import com.example.playlistmaker.presentation.model.PlaylistScreenState
 import com.example.playlistmaker.presentation.model.PlaylistViewModel
 import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class PlaylistFragment :
     Fragment(R.layout.fragment_playlist) {
@@ -38,11 +32,11 @@ class PlaylistFragment :
 
     private lateinit var trackAdapter: TrackAdapter
 
-    private lateinit var bottomSheetBehavior:
-            BottomSheetBehavior<View>
+    private lateinit var menuSheetBehavior:
+            BottomSheetBehavior<LinearLayout>
 
-    private lateinit var menuBottomSheetBehavior:
-            BottomSheetBehavior<View>
+    private lateinit var menuSheetCallback:
+            BottomSheetBehavior.BottomSheetCallback
 
     private val playlistId: Long
         get() = requireArguments()
@@ -60,170 +54,36 @@ class PlaylistFragment :
         _binding =
             FragmentPlaylistBinding.bind(view)
 
-        setupWindowInsets()
-        setupBackButton()
-        setupBottomSheet()
-        setupMenuBottomSheet()
-        setupShareButton()
-        setupMenuButton()
+        binding.playlistMenuSheet.visibility =
+            View.GONE
+
+        binding.menuDimView.visibility =
+            View.GONE
+
+        binding.menuDimView.alpha =
+            0f
+
         setupRecyclerView()
+        setupButtons()
+        setupMenuBottomSheet()
         observeState()
-        observePlaylistDeleted()
+
+        hideMenu()
 
         viewModel.loadPlaylist(
             playlistId
         )
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        if (_binding != null) {
-            viewModel.loadPlaylist(
-                playlistId
-            )
-        }
-    }
-
-    private fun setupWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(
-            binding.playlistContent
-        ) { root, insets ->
-
-            val systemBars =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-                )
-
-            root.setPadding(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                0
-            )
-
-            insets
-        }
-    }
-
-    private fun setupBackButton() {
-        binding.btnBack.setOnClickListener {
-            requireActivity()
-                .onBackPressedDispatcher
-                .onBackPressed()
-        }
-    }
-
-    private fun setupBottomSheet() {
-        bottomSheetBehavior =
-            BottomSheetBehavior.from(
-                binding.playlistTracksSheet
-            )
-
-        bottomSheetBehavior.isHideable = false
-
-        bottomSheetBehavior.state =
-            BottomSheetBehavior.STATE_COLLAPSED
-    }
-
-    private fun setupMenuBottomSheet() {
-        menuBottomSheetBehavior =
-            BottomSheetBehavior.from(
-                binding.playlistMenuSheet
-            )
-
-        menuBottomSheetBehavior.isHideable = true
-        menuBottomSheetBehavior.skipCollapsed = true
-
-        menuBottomSheetBehavior.state =
-            BottomSheetBehavior.STATE_HIDDEN
-
-        menuBottomSheetBehavior.addBottomSheetCallback(
-            object :
-                BottomSheetBehavior.BottomSheetCallback() {
-
-                override fun onStateChanged(
-                    bottomSheet: View,
-                    newState: Int
-                ) {
-                    if (
-                        newState ==
-                        BottomSheetBehavior.STATE_HIDDEN
-                    ) {
-                        binding.menuDimView.visibility =
-                            View.GONE
-                    }
-                }
-
-                override fun onSlide(
-                    bottomSheet: View,
-                    slideOffset: Float
-                ) {
-                }
-            }
-        )
-
-        binding.menuDimView.setOnClickListener {
-            hideMenu()
-        }
-    }
-
-    private fun setupShareButton() {
-        binding.btnShare.setOnClickListener {
-            sharePlaylist()
-        }
-    }
-
-    private fun setupMenuButton() {
-        binding.btnMenu.setOnClickListener {
-            showMenu()
-        }
-
-        binding.btnMenuShare.setOnClickListener {
-            hideMenu()
-            sharePlaylist()
-        }
-
-        binding.btnMenuEdit.setOnClickListener {
-            hideMenu()
-
-            findNavController().navigate(
-                R.id.action_playlistFragment_to_editPlaylistFragment,
-                bundleOf(
-                    "playlistId" to playlistId
-                )
-            )
-        }
-
-        binding.btnMenuDelete.setOnClickListener {
-            showDeletePlaylistDialog()
-        }
-    }
-
-    private fun showMenu() {
-        binding.menuDimView.visibility =
-            View.VISIBLE
-
-        menuBottomSheetBehavior.state =
-            BottomSheetBehavior.STATE_EXPANDED
-    }
-
-    private fun hideMenu() {
-        menuBottomSheetBehavior.state =
-            BottomSheetBehavior.STATE_HIDDEN
-
-        binding.menuDimView.visibility =
-            View.GONE
-    }
-
     private fun setupRecyclerView() {
+
         trackAdapter =
             TrackAdapter(
                 onTrackClick = { track ->
                     openPlayer(track)
                 },
                 onTrackLongClick = { track ->
-                    showDeleteDialog(track)
+                    showDeleteTrackDialog(track)
                 }
             )
 
@@ -236,263 +96,406 @@ class PlaylistFragment :
             trackAdapter
     }
 
+    private fun setupButtons() {
+
+        binding.btnBack.setOnClickListener {
+
+            findNavController()
+                .navigateUp()
+        }
+
+        binding.btnShare.setOnClickListener {
+
+            val state =
+                viewModel.state.value
+                    ?: return@setOnClickListener
+
+            val playlist =
+                state.playlist
+                    ?: return@setOnClickListener
+
+            sharePlaylist(
+                playlist.name,
+                playlist.description,
+                state.tracks
+            )
+        }
+
+        binding.btnMenu.setOnClickListener {
+            showMenu()
+        }
+
+        binding.menuDimView.setOnClickListener {
+            closeMenu()
+        }
+    }
+
+    private fun setupMenuBottomSheet() {
+
+        menuSheetBehavior =
+            BottomSheetBehavior.from(
+                binding.playlistMenuSheet
+            )
+
+        menuSheetBehavior.isHideable =
+            true
+
+        menuSheetBehavior.skipCollapsed =
+            true
+
+        menuSheetBehavior.state =
+            BottomSheetBehavior.STATE_HIDDEN
+
+        binding.playlistMenuSheet.visibility =
+            View.GONE
+
+        binding.menuDimView.visibility =
+            View.GONE
+
+        binding.menuDimView.alpha =
+            0f
+
+        binding.btnMenuShare.setOnClickListener {
+
+            val state =
+                viewModel.state.value
+                    ?: return@setOnClickListener
+
+            val playlist =
+                state.playlist
+                    ?: return@setOnClickListener
+
+            closeMenu()
+
+            sharePlaylist(
+                playlist.name,
+                playlist.description,
+                state.tracks
+            )
+        }
+
+        binding.btnMenuEdit.setOnClickListener {
+
+            closeMenu()
+
+            findNavController().navigate(
+                R.id.action_global_createPlaylistFragment,
+                bundleOf(
+                    "playlistId" to playlistId
+                )
+            )
+        }
+
+        binding.btnMenuDelete.setOnClickListener {
+
+            closeMenu()
+
+            showDeletePlaylistDialog()
+        }
+
+        menuSheetCallback =
+            object :
+                BottomSheetBehavior.BottomSheetCallback() {
+
+                override fun onStateChanged(
+                    bottomSheet: View,
+                    newState: Int
+                ) {
+
+                    val currentBinding =
+                        _binding
+                            ?: return
+
+                    if (
+                        newState ==
+                        BottomSheetBehavior.STATE_HIDDEN
+                    ) {
+
+                        currentBinding
+                            .playlistMenuSheet
+                            .visibility =
+                            View.GONE
+
+                        currentBinding
+                            .menuDimView
+                            .visibility =
+                            View.GONE
+
+                        currentBinding
+                            .menuDimView
+                            .alpha =
+                            0f
+                    }
+                }
+
+                override fun onSlide(
+                    bottomSheet: View,
+                    slideOffset: Float
+                ) {
+                }
+            }
+
+        menuSheetBehavior.addBottomSheetCallback(
+            menuSheetCallback
+        )
+    }
+
+    private fun showMenu() {
+
+        val currentBinding =
+            _binding
+                ?: return
+
+        currentBinding
+            .playlistMenuSheet
+            .visibility =
+            View.VISIBLE
+
+        currentBinding
+            .menuDimView
+            .visibility =
+            View.VISIBLE
+
+        currentBinding
+            .menuDimView
+            .alpha =
+            1f
+
+        currentBinding
+            .menuDimView
+            .bringToFront()
+
+        currentBinding
+            .playlistMenuSheet
+            .bringToFront()
+
+        menuSheetBehavior.state =
+            BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    private fun closeMenu() {
+
+        if (
+            ::menuSheetBehavior.isInitialized
+        ) {
+
+            menuSheetBehavior.state =
+                BottomSheetBehavior.STATE_HIDDEN
+        }
+
+        _binding?.playlistMenuSheet?.visibility =
+            View.GONE
+
+        _binding?.menuDimView?.visibility =
+            View.GONE
+
+        _binding?.menuDimView?.alpha =
+            0f
+    }
+
+    private fun hideMenu() {
+
+        if (
+            ::menuSheetBehavior.isInitialized
+        ) {
+
+            menuSheetBehavior.state =
+                BottomSheetBehavior.STATE_HIDDEN
+        }
+
+        _binding?.playlistMenuSheet?.visibility =
+            View.GONE
+
+        _binding?.menuDimView?.visibility =
+            View.GONE
+
+        _binding?.menuDimView?.alpha =
+            0f
+    }
+
     private fun observeState() {
+
         viewModel.state.observe(
             viewLifecycleOwner
         ) { state ->
 
-            val playlist =
-                state.playlist
-                    ?: return@observe
-
-            binding.tvPlaylistName.text =
-                playlist.name
-
-            if (
-                playlist.description
-                    .isNullOrBlank()
-            ) {
-
-                binding.tvPlaylistDescription.visibility =
-                    View.GONE
-
-            } else {
-
-                binding.tvPlaylistDescription.visibility =
-                    View.VISIBLE
-
-                binding.tvPlaylistDescription.text =
-                    playlist.description
-
-                binding.tvPlaylistDescription.setTextColor(
-                    Color.BLACK
-                )
-            }
-
-            binding.tvPlaylistInfo.text =
-                getString(
-                    R.string.playlist_info,
-                    state.duration,
-                    state.tracksCount
-                )
-
-            showCover(
-                playlist.coverPath
-            )
-
-            trackAdapter.setTracks(
-                state.tracks
-            )
-
-            if (state.tracks.isEmpty()) {
-
-                binding.playlistTracksSheet.visibility =
-                    View.GONE
-
-            } else {
-
-                binding.playlistTracksSheet.visibility =
-                    View.VISIBLE
-            }
-
-            binding.tvMenuPlaylistName.text =
-                playlist.name
-
-            binding.tvMenuPlaylistInfo.text =
-                getString(
-                    R.string.playlist_info,
-                    state.duration,
-                    state.tracksCount
-                )
-
-            if (
-                playlist.description
-                    .isNullOrBlank()
-            ) {
-
-                binding.tvMenuPlaylistDescription.visibility =
-                    View.GONE
-
-            } else {
-
-                binding.tvMenuPlaylistDescription.visibility =
-                    View.VISIBLE
-
-                binding.tvMenuPlaylistDescription.text =
-                    playlist.description
-
-                binding.tvMenuPlaylistDescription.setTextColor(
-                    Color.BLACK
-                )
-            }
+            renderState(state)
         }
-    }
 
-    private fun observePlaylistDeleted() {
         viewModel.playlistDeleted.observe(
             viewLifecycleOwner
         ) { deleted ->
 
-            if (!deleted) {
-                return@observe
-            }
+            if (deleted) {
 
-            requireActivity()
-                .onBackPressedDispatcher
-                .onBackPressed()
+                findNavController()
+                    .navigateUp()
+            }
         }
     }
 
-    private fun sharePlaylist() {
-
-        val state =
-            viewModel.state.value
-                ?: return
+    private fun renderState(
+        state: PlaylistScreenState
+    ) {
 
         val playlist =
             state.playlist
                 ?: return
 
-        val tracks =
+        binding.tvPlaylistName.text =
+            playlist.name
+
+        if (
+            playlist.description.isNullOrBlank()
+        ) {
+
+            binding.tvPlaylistDescription.visibility =
+                View.GONE
+
+        } else {
+
+            binding.tvPlaylistDescription.visibility =
+                View.VISIBLE
+
+            binding.tvPlaylistDescription.text =
+                playlist.description
+        }
+
+        binding.tvPlaylistInfo.text =
+            getString(
+                R.string.playlist_info_format,
+                state.duration,
+                state.tracksCount
+            )
+
+        trackAdapter.setTracks(
             state.tracks
-
-        if (tracks.isEmpty()) {
-
-            Toast.makeText(
-                requireContext(),
-                "В этом плейлисте нет списка треков, которым можно поделиться",
-                Toast.LENGTH_LONG
-            ).show()
-
-            return
-        }
-
-        val shareText =
-            buildShareText(
-                playlist.name,
-                playlist.description,
-                tracks
-            )
-
-        val shareIntent =
-            Intent(
-                Intent.ACTION_SEND
-            ).apply {
-
-                type =
-                    "text/plain"
-
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    shareText
-                )
-            }
-
-        startActivity(
-            Intent.createChooser(
-                shareIntent,
-                null
-            )
         )
-    }
 
-    private fun buildShareText(
-        playlistName: String,
-        description: String?,
-        tracks: List<Track>
-    ): String {
+        showPlaylistCover(
+            playlist.coverPath
+        )
 
-        val builder =
-            StringBuilder()
+        showMenuPlaylistCover(
+            playlist.coverPath
+        )
 
-        builder
-            .append(playlistName)
-            .append("\n")
+        binding.tvMenuPlaylistName.text =
+            playlist.name
 
-        builder
-            .append(description.orEmpty())
-            .append("\n")
+        binding.tvMenuPlaylistInfo.text =
+            getString(
+                R.string.playlist_tracks_count,
+                state.tracksCount
+            )
 
-        builder
-            .append(tracks.size)
-            .append(" треков")
-            .append("\n")
+        if (
+            state.tracks.isEmpty()
+        ) {
 
-        tracks.forEachIndexed { index, track ->
+            binding.playlistTracksSheet.visibility =
+                View.VISIBLE
 
-            builder
-                .append(index + 1)
-                .append(". ")
-                .append(track.artistName)
-                .append(" - ")
-                .append(track.trackName)
-                .append(" (")
-                .append(
-                    formatTrackTime(
-                        track.trackTime
-                    )
-                )
-                .append(")")
+            binding.tvEmptyPlaylist.visibility =
+                View.VISIBLE
 
-            if (index < tracks.lastIndex) {
-                builder.append("\n")
-            }
+            binding.rvPlaylistTracks.visibility =
+                View.GONE
+
+        } else {
+
+            binding.playlistTracksSheet.visibility =
+                View.VISIBLE
+
+            binding.tvEmptyPlaylist.visibility =
+                View.GONE
+
+            binding.rvPlaylistTracks.visibility =
+                View.VISIBLE
         }
-
-        return builder.toString()
     }
 
-    private fun formatTrackTime(
-        trackTime: Long
-    ): String {
-
-        return SimpleDateFormat(
-            "mm:ss",
-            Locale.getDefault()
-        ).format(trackTime)
-    }
-
-    private fun showCover(
+    private fun showPlaylistCover(
         coverPath: String?
     ) {
 
-        binding.ivPlaylistCover.setImageResource(
-            R.drawable.vector
-        )
+        binding.ivPlaylistCover.visibility =
+            View.VISIBLE
 
-        if (coverPath.isNullOrEmpty()) {
+        if (
+            coverPath.isNullOrBlank()
+        ) {
+
+            binding.ivPlaylistCover
+                .setImageResource(
+                    R.drawable.vector
+                )
+
             return
         }
 
-        val coverFile =
+        val file =
             File(coverPath)
 
-        if (!coverFile.exists()) {
+        if (
+            !file.exists()
+        ) {
+
+            binding.ivPlaylistCover
+                .setImageResource(
+                    R.drawable.vector
+                )
+
             return
         }
 
-        Glide.with(
-            binding.ivPlaylistCover
-        )
-            .load(coverFile)
-            .transform(
-                RoundedCorners(
-                    (
-                            16 *
-                                    resources
-                                        .displayMetrics
-                                        .density
-                            ).toInt()
-                )
-            )
-            .placeholder(
-                R.drawable.vector
-            )
-            .error(
-                R.drawable.vector
-            )
+        Glide.with(this)
+            .load(file)
+            .centerCrop()
             .into(
                 binding.ivPlaylistCover
+            )
+    }
+
+    private fun showMenuPlaylistCover(
+        coverPath: String?
+    ) {
+
+        binding.ivMenuPlaylistCover.visibility =
+            View.VISIBLE
+
+        if (
+            coverPath.isNullOrBlank()
+        ) {
+
+            binding.ivMenuPlaylistCover
+                .setImageResource(
+                    R.drawable.vector
+                )
+
+            return
+        }
+
+        val file =
+            File(coverPath)
+
+        if (
+            !file.exists()
+        ) {
+
+            binding.ivMenuPlaylistCover
+                .setImageResource(
+                    R.drawable.vector
+                )
+
+            return
+        }
+
+        Glide.with(this)
+            .load(file)
+            .centerCrop()
+            .into(
+                binding.ivMenuPlaylistCover
             )
     }
 
@@ -507,7 +510,7 @@ class PlaylistFragment :
             ).apply {
 
                 putExtra(
-                    PlayerActivity.EXTRA_TRACK,
+                    "track",
                     TrackParcelable.fromDomain(
                         track
                     )
@@ -517,112 +520,191 @@ class PlaylistFragment :
         startActivity(intent)
     }
 
-    private fun showDeleteDialog(
+    private fun showDeleteTrackDialog(
         track: Track
     ) {
 
-        val dialog =
-            MaterialAlertDialogBuilder(
-                requireContext(),
-                R.style.DeleteTrackDialogTheme
-            )
-                .setMessage(
-                    "Хотите удалить трек?"
-                )
-                .setNegativeButton(
-                    "НЕТ",
-                    null
-                )
-                .setPositiveButton(
-                    "ДА"
-                ) { _, _ ->
-
-                    viewModel.deleteTrack(
-                        playlistId,
-                        track.trackId
-                    )
-                }
-                .create()
-
-        dialog.setOnShowListener {
-
-            dialog.getButton(
-                android.app.AlertDialog.BUTTON_NEGATIVE
-            ).setTextColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.blue
+        AlertDialog.Builder(
+            requireContext(),
+            R.style.PlaylistMakerDialogTheme
+        )
+            .setTitle(
+                getString(
+                    R.string.delete_track_title
                 )
             )
-
-            dialog.getButton(
-                android.app.AlertDialog.BUTTON_POSITIVE
-            ).setTextColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.blue
+            .setMessage(
+                getString(
+                    R.string.delete_track_message,
+                    track.trackName
                 )
             )
-        }
+            .setNegativeButton(
+                getString(
+                    R.string.no
+                ),
+                null
+            )
+            .setPositiveButton(
+                getString(
+                    R.string.yes
+                )
+            ) { _, _ ->
 
-        dialog.show()
+                viewModel.deleteTrack(
+                    playlistId,
+                    track.trackId
+                )
+            }
+            .show()
     }
 
     private fun showDeletePlaylistDialog() {
 
-        hideMenu()
-
-        val dialog =
-            MaterialAlertDialogBuilder(
-                requireContext(),
-                R.style.DeleteTrackDialogTheme
+        AlertDialog.Builder(
+            requireContext(),
+            R.style.PlaylistMakerDialogTheme
+        )
+            .setTitle(
+                getString(
+                    R.string.delete_playlist_title
+                )
             )
-                .setTitle(
-                    "Удалить плейлист"
+            .setMessage(
+                getString(
+                    R.string.delete_playlist_message
                 )
+            )
+            .setNegativeButton(
+                getString(
+                    R.string.no
+                ),
+                null
+            )
+            .setPositiveButton(
+                getString(
+                    R.string.yes
+                )
+            ) { _, _ ->
+
+                viewModel.deletePlaylist(
+                    playlistId
+                )
+            }
+            .show()
+    }
+
+    private fun sharePlaylist(
+        name: String,
+        description: String?,
+        tracks: List<Track>
+    ) {
+
+        if (tracks.isEmpty()) {
+
+            AlertDialog.Builder(
+                requireContext(),
+                R.style.PlaylistMakerDialogTheme
+            )
                 .setMessage(
-                    "Хотите удалить плейлист?"
-                )
-                .setNegativeButton(
-                    "Нет",
-                    null
+                    getString(
+                        R.string.playlist_empty_share
+                    )
                 )
                 .setPositiveButton(
-                    "Да"
-                ) { _, _ ->
-
-                    viewModel.deletePlaylist(
-                        playlistId
-                    )
-                }
-                .create()
-
-        dialog.setOnShowListener {
-
-            dialog.getButton(
-                android.app.AlertDialog.BUTTON_NEGATIVE
-            ).setTextColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.blue
+                    getString(
+                        R.string.yes
+                    ),
+                    null
                 )
-            )
+                .show()
 
-            dialog.getButton(
-                android.app.AlertDialog.BUTTON_POSITIVE
-            ).setTextColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    R.color.blue
-                )
-            )
+            return
         }
 
-        dialog.show()
+        val text =
+            buildString {
+
+                append(name)
+                append("\n")
+
+                if (
+                    !description.isNullOrBlank()
+                ) {
+
+                    append(description)
+                    append("\n")
+                }
+
+                append("\n")
+
+                tracks.forEachIndexed { index, track ->
+
+                    val minutes =
+                        track.trackTime / 60000
+
+                    val seconds =
+                        (track.trackTime % 60000) / 1000
+
+                    val formattedTime =
+                        String.format(
+                            "%02d:%02d",
+                            minutes,
+                            seconds
+                        )
+
+                    append(
+                        getString(
+                            R.string.track_share_format,
+                            index + 1,
+                            track.trackName,
+                            track.artistName,
+                            formattedTime
+                        )
+                    )
+
+                    append("\n")
+                }
+            }
+
+        val intent =
+            Intent(
+                Intent.ACTION_SEND
+            ).apply {
+
+                type =
+                    "text/plain"
+
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    text
+                )
+            }
+
+        startActivity(
+            Intent.createChooser(
+                intent,
+                getString(
+                    R.string.share_playlist
+                )
+            )
+        )
     }
 
     override fun onDestroyView() {
+
+        if (
+            ::menuSheetCallback.isInitialized
+        ) {
+
+            menuSheetBehavior
+                .removeBottomSheetCallback(
+                    menuSheetCallback
+                )
+        }
+
         super.onDestroyView()
+
         _binding = null
     }
 }

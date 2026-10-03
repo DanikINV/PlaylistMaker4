@@ -26,7 +26,6 @@ import com.example.playlistmaker.domain.repository.FavoriteTrackRepository
 import com.example.playlistmaker.domain.repository.HistoryRepository
 import com.example.playlistmaker.domain.repository.SearchRepository
 import com.example.playlistmaker.domain.repository.SettingsRepository
-import com.example.playlistmaker.presentation.model.EditPlaylistViewModel
 import com.example.playlistmaker.presentation.model.FavoritesViewModel
 import com.example.playlistmaker.presentation.model.PlayerViewModel
 import com.example.playlistmaker.presentation.model.PlaylistViewModel
@@ -147,12 +146,6 @@ val appModule = module {
     viewModel {
         PlaylistViewModel(
             playlistInteractor = get()
-        )
-    }
-
-    viewModel {
-        EditPlaylistViewModel(
-            get()
         )
     }
 }

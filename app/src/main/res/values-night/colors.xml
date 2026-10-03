@@ -30,4 +30,20 @@
     <color name="text">#000000</color>
     <color name="white_crate_playlist">#FFFFFF</color>
     <color name="blue">#3772E5</color>
+    <color name="playlist_info_background">#E6E8EB</color>
+    <color name="playlist_main_text">#1A1B22</color>
+    <color name="playlist_secondary_text">#AEAFB4</color>
+    <color name="playlist_sheet_background">#1A1B22</color>
+    <color name="playlist_sheet_handle">#FFFFFF</color>
+    <color name="playlist_track_background">#1D1E25</color>
+    <color name="playlist_track_main_text">#FFFFFF</color>
+    <color name="playlist_track_secondary_text">#B8B8BD</color>
+    <color name="playlist_tracks_sheet_background">#1A1B22</color>
+    <color name="playlist_tracks_sheet_handle">#FFFFFF</color>
+    <color name="playlist_menu_background">#1A1B22</color>
+    <color name="playlist_menu_main_text">#FFFFFF</color>
+    <color name="playlist_menu_secondary_text">#AEAFB4</color>
+    <color name="playlist_empty_text">#FFFFFF</color>
+    <color name="playlist_dialog_background">#1A1B22</color>
+    <color name="playlist_dialog_button_text">#FFFFFF</color>
 </resources>

@@ -31,11 +31,24 @@ class PlaylistsFragment :
             savedInstanceState
         )
 
-        _binding =
-            FragmentPlaylistsBinding.bind(view)
+        _binding = FragmentPlaylistsBinding.bind(view)
 
         setupRecyclerView()
+        setupCreateButton()
         observePlaylists()
+    }
+
+    private fun setupCreateButton() {
+
+        binding.btnNewPlaylist.setOnClickListener {
+
+            findNavController().navigate(
+                R.id.action_global_createPlaylistFragment,
+                bundleOf(
+                    "playlistId" to -1L
+                )
+            )
+        }
     }
 
     private fun setupRecyclerView() {
