@@ -6,6 +6,7 @@
     <color name="notification_text">#000000</color>
     <color name="white">#000000</color>
     <color name="black">#FFFFFF</color>
+    <color name="black_primary">#000000</color>
     <color name="blackSearch">#000000</color>
     <color name="whiteTitle">#FFFFFF</color>
     <color name="blackButton">#000000</color>
@@ -26,5 +27,7 @@
     <color name="edit_text_text">#FFFFFF</color>
     <color name="edit_text_hint">#AEAFB4</color>
     <color name="text_primary">#FFFFFF</color>
+    <color name="text">#000000</color>
     <color name="white_crate_playlist">#FFFFFF</color>
+    <color name="blue">#3772E5</color>
 </resources>

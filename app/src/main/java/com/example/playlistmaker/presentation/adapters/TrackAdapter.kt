@@ -13,9 +13,11 @@ import com.example.playlistmaker.R
 import com.example.playlistmaker.domain.model.Track
 
 class TrackAdapter(
-    private val tracks: List<Track>,
-    private val onTrackClick: (Track) -> Unit
+    private val onTrackClick: (Track) -> Unit,
+    private val onTrackLongClick: (Track) -> Unit = {}
 ) : RecyclerView.Adapter<TrackAdapter.TrackViewHolder>() {
+
+    private var tracks = emptyList<Track>()
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -35,41 +37,69 @@ class TrackAdapter(
         holder.itemView.setOnClickListener {
             onTrackClick(track)
         }
+
+        holder.itemView.setOnLongClickListener {
+            onTrackLongClick(track)
+            true
+        }
     }
 
-    override fun getItemCount(): Int = tracks.size
+    override fun getItemCount(): Int =
+        tracks.size
+
+    fun setTracks(
+        newTracks: List<Track>
+    ) {
+        tracks = newTracks
+        notifyDataSetChanged()
+    }
 
     class TrackViewHolder(
         parent: ViewGroup
     ) : RecyclerView.ViewHolder(
         LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_track, parent, false)
+            .inflate(
+                R.layout.item_track,
+                parent,
+                false
+            )
     ) {
 
         private val artwork: ImageView =
-            itemView.findViewById(R.id.iv_track_artwork)
+            itemView.findViewById(
+                R.id.iv_track_artwork
+            )
 
         private val trackName: TextView =
-            itemView.findViewById(R.id.tv_track_name)
+            itemView.findViewById(
+                R.id.tv_track_name
+            )
 
         private val artistTime: TextView =
-            itemView.findViewById(R.id.tv_track_artist_time)
+            itemView.findViewById(
+                R.id.tv_track_artist_time
+            )
 
         fun bind(track: Track) {
 
-            trackName.text = track.trackName
+            trackName.text =
+                track.trackName
 
-            val minutes = track.trackTime / 60000
-            val seconds = (track.trackTime % 60000) / 1000
+            val minutes =
+                track.trackTime / 60000
 
-            val formattedTime = String.format(
-                "%02d:%02d",
-                minutes,
-                seconds
-            )
+            val seconds =
+                (track.trackTime % 60000) / 1000
+
+            val formattedTime =
+                String.format(
+                    "%02d:%02d",
+                    minutes,
+                    seconds
+                )
 
             artistTime.text =
-                "${track.artistName} \u2022 $formattedTime"
+                "${track.artistName} • $formattedTime"
 
             val cornerRadiusPx =
                 itemView.context.resources
@@ -84,7 +114,9 @@ class TrackAdapter(
                 .transform(
                     MultiTransformation(
                         CenterCrop(),
-                        RoundedCorners(cornerRadiusPx)
+                        RoundedCorners(
+                            cornerRadiusPx
+                        )
                     )
                 )
                 .into(artwork)
