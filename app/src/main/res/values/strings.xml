@@ -70,5 +70,5 @@
     <string name="delete_track_title">Удалить трек?</string>
     <string name="delete_track_message">%1$s</string>
     <string name="share_playlist">Поделиться плейлистом</string>
-    <string name="track_share_format">%1$d. %2$s — %3$s (%4$s)</string>
+    <string name="track_share_format">%1$d. %2$s - %3$s (%4$s)</string>
 </resources>

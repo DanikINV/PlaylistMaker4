@@ -525,8 +525,7 @@ class PlaylistFragment :
     ) {
 
         AlertDialog.Builder(
-            requireContext(),
-            R.style.PlaylistMakerDialogTheme
+            requireContext()
         )
             .setTitle(
                 getString(
@@ -562,8 +561,7 @@ class PlaylistFragment :
     private fun showDeletePlaylistDialog() {
 
         AlertDialog.Builder(
-            requireContext(),
-            R.style.PlaylistMakerDialogTheme
+            requireContext()
         )
             .setTitle(
                 getString(
@@ -600,11 +598,12 @@ class PlaylistFragment :
         tracks: List<Track>
     ) {
 
-        if (tracks.isEmpty()) {
+        if (
+            tracks.isEmpty()
+        ) {
 
             AlertDialog.Builder(
-                requireContext(),
-                R.style.PlaylistMakerDialogTheme
+                requireContext()
             )
                 .setMessage(
                     getString(
@@ -636,7 +635,15 @@ class PlaylistFragment :
                     append("\n")
                 }
 
-                append("\n")
+                append(
+                    resources.getQuantityString(
+                        R.plurals.tracks_count,
+                        tracks.size,
+                        tracks.size
+                    )
+                )
+
+                append("\n\n")
 
                 tracks.forEachIndexed { index, track ->
 
@@ -657,8 +664,8 @@ class PlaylistFragment :
                         getString(
                             R.string.track_share_format,
                             index + 1,
-                            track.trackName,
                             track.artistName,
+                            track.trackName,
                             formattedTime
                         )
                     )
