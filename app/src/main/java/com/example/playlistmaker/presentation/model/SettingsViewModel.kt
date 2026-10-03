@@ -5,9 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.playlistmaker.domain.interactors.SettingsInteractor
 
+
 class SettingsViewModel(
     private val settingsInteractor: SettingsInteractor
 ) : ViewModel() {
+
 
     private val _state = MutableLiveData(
         SettingsScreenState(
@@ -15,13 +17,18 @@ class SettingsViewModel(
         )
     )
 
+
     val state: LiveData<SettingsScreenState> = _state
 
+
+
     fun onThemeChanged(isDark: Boolean) {
+
         settingsInteractor.saveDarkTheme(isDark)
 
-        _state.value = SettingsScreenState(
-            isDarkTheme = isDark
-        )
+        _state.value =
+            SettingsScreenState(
+                isDarkTheme = isDark
+            )
     }
 }

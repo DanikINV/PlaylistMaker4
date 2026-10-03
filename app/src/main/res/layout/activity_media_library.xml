@@ -1,48 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/white_primary">
 
     <LinearLayout
-        android:id="@+id/toolbar_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="@dimen/spacing_medium">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/white_primary">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/toolbar_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/media_library"
-            style="@style/TextAppearance.PlaylistMaker.Title" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/spacing_medium">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/media_library"
+                style="@style/TextAppearance.PlaylistMaker.Title" />
+
+        </LinearLayout>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white_primary"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabIndicatorColor="@color/black"
+            app:tabIndicatorHeight="2dp"
+            app:tabSelectedTextColor="@color/black"
+            app:tabTextColor="@color/track_secondary_text"
+            app:tabTextAppearance="@style/TextAppearance.PlaylistMaker.Tab"
+            app:tabRippleColor="@android:color/transparent" />
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tab_layout"
+    <TextView
+        android:id="@+id/playlist_created_notification"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white_primary"
-        app:tabMode="fixed"
-        app:tabGravity="fill"
-        app:tabIndicatorColor="@color/black"
-        app:tabIndicatorHeight="2dp"
-        app:tabSelectedTextColor="@color/black"
-        app:tabTextColor="@color/track_secondary_text"
-        app:tabTextAppearance="@style/TextAppearance.PlaylistMaker.Tab"
-        app:tabRippleColor="@android:color/transparent" />
+        android:layout_height="52dp"
+        android:layout_gravity="bottom"
+        android:background="@color/notification"
+        android:elevation="100dp"
+        android:gravity="center"
+        android:paddingHorizontal="16dp"
+        android:textColor="@color/notification_text"
+        android:textSize="16sp"
+        android:fontFamily="@font/ys_display_regular"
+        android:visibility="gone" />
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/view_pager"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</FrameLayout>
