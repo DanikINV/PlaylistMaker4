@@ -32,8 +32,6 @@ class SearchFragment : Fragment(R.layout.activity_search) {
 
     private val viewModel: SearchViewModel by viewModel()
 
-    private val displayedTracks = ArrayList<Track>()
-
     private lateinit var adapter: TrackAdapter
 
     override fun onViewCreated(
@@ -94,10 +92,10 @@ class SearchFragment : Fragment(R.layout.activity_search) {
             LinearLayoutManager(requireContext())
 
         adapter = TrackAdapter(
-            displayedTracks
-        ) { track ->
-            viewModel.onTrackSelected(track)
-        }
+            onTrackClick = { track ->
+                viewModel.onTrackSelected(track)
+            }
+        )
 
         binding.rvTracks.adapter = adapter
     }
@@ -353,26 +351,24 @@ class SearchFragment : Fragment(R.layout.activity_search) {
         newTracks: List<Track>
     ) {
 
-        displayedTracks.clear()
-        displayedTracks.addAll(newTracks)
-
-        adapter.notifyDataSetChanged()
+        adapter.setTracks(newTracks)
     }
 
     private fun openPlayer(
         track: Track
     ) {
 
-        val intent = Intent(
-            requireContext(),
-            PlayerActivity::class.java
-        ).apply {
+        val intent =
+            Intent(
+                requireContext(),
+                PlayerActivity::class.java
+            ).apply {
 
-            putExtra(
-                PlayerActivity.EXTRA_TRACK,
-                TrackParcelable.fromDomain(track)
-            )
-        }
+                putExtra(
+                    PlayerActivity.EXTRA_TRACK,
+                    TrackParcelable.fromDomain(track)
+                )
+            }
 
         startActivity(intent)
     }
@@ -381,10 +377,11 @@ class SearchFragment : Fragment(R.layout.activity_search) {
         view: View
     ) {
 
-        val imm = requireContext()
-            .getSystemService(
-                Context.INPUT_METHOD_SERVICE
-            ) as InputMethodManager
+        val imm =
+            requireContext()
+                .getSystemService(
+                    Context.INPUT_METHOD_SERVICE
+                ) as InputMethodManager
 
         imm.hideSoftInputFromWindow(
             view.windowToken,

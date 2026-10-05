@@ -1,6 +1,7 @@
 package com.example.playlistmaker.presentation.activities
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -12,8 +13,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+        super.onCreate(
+            savedInstanceState
+        )
 
         WindowCompat.setDecorFitsSystemWindows(
             window,
@@ -59,5 +64,21 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.setupWithNavController(
             navController
         )
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+
+            bottomNavigation.visibility =
+                when (destination.id) {
+
+                    R.id.playlistFragment,
+                    R.id.createPlaylistFragment -> {
+                        View.GONE
+                    }
+
+                    else -> {
+                        View.VISIBLE
+                    }
+                }
+        }
     }
 }

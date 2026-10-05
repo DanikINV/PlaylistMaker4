@@ -3,6 +3,7 @@ package com.example.playlistmaker.presentation.fragments
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -13,6 +14,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.example.playlistmaker.R
 import com.example.playlistmaker.databinding.FragmentCreatePlaylistBinding
@@ -30,9 +32,23 @@ class CreatePlaylistFragment :
     private var _binding: FragmentCreatePlaylistBinding? = null
     private val binding get() = _binding!!
 
-    private val playlistInteractor: PlaylistInteractor by inject()
+    private val playlistInteractor:
+            PlaylistInteractor by inject()
 
     private var selectedImageUri: Uri? = null
+
+    private var currentPlaylist: Playlist? = null
+
+    private val editPlaylistId: Long
+        get() = requireArguments()
+            .getLong(
+                "playlistId",
+                -1L
+            )
+
+    private val isEditMode: Boolean
+        get() =
+            editPlaylistId != -1L
 
     private val pickImageLauncher =
         registerForActivityResult(
@@ -40,10 +56,15 @@ class CreatePlaylistFragment :
         ) { uri ->
 
             if (uri != null) {
-                selectedImageUri = uri
 
-                showSelectedImage(uri)
-                updateCreateButton()
+                selectedImageUri =
+                    uri
+
+                showSelectedImage(
+                    uri
+                )
+
+                updateButton()
             }
         }
 
@@ -57,18 +78,45 @@ class CreatePlaylistFragment :
         )
 
         _binding =
-            FragmentCreatePlaylistBinding.bind(view)
+            FragmentCreatePlaylistBinding.bind(
+                view
+            )
 
         setupWindowInsets()
         setupBackButton()
+        setupSystemBack()
         setupImagePicker()
         setupNameField()
-        setupCreateButton()
+        setupButton()
 
-        updateCreateButton()
+        if (isEditMode) {
+
+            binding.tvTitle.text =
+                "Редактировать"
+
+            binding.btnCreatePlaylist.text =
+                "Сохранить"
+
+            loadPlaylist()
+
+        } else {
+
+            binding.tvTitle.text =
+                getString(
+                    R.string.new_playlist
+                )
+
+            binding.btnCreatePlaylist.text =
+                getString(
+                    R.string.create_new_playlist
+                )
+
+            updateButton()
+        }
     }
 
     private fun setupWindowInsets() {
+
         ViewCompat.setOnApplyWindowInsetsListener(
             binding.root
         ) { _, insets ->
@@ -101,34 +149,84 @@ class CreatePlaylistFragment :
     }
 
     private fun setupBackButton() {
+
         binding.btnBack.setOnClickListener {
-            handleBack()
+
+            if (isEditMode) {
+
+                findNavController()
+                    .navigateUp()
+
+            } else {
+
+                handleBack()
+            }
         }
+    }
+
+    private fun setupSystemBack() {
+
+        requireActivity()
+            .onBackPressedDispatcher
+            .addCallback(
+                viewLifecycleOwner,
+                object :
+                    OnBackPressedCallback(true) {
+
+                    override fun handleOnBackPressed() {
+
+                        if (isEditMode) {
+
+                            findNavController()
+                                .navigateUp()
+
+                        } else {
+
+                            handleBack()
+                        }
+                    }
+                }
+            )
     }
 
     private fun setupImagePicker() {
-        binding.playlistCoverContainer.setOnClickListener {
 
-            pickImageLauncher.launch(
-                PickVisualMediaRequest(
-                    ActivityResultContracts
-                        .PickVisualMedia
-                        .ImageOnly
+        binding.playlistCoverContainer
+            .setOnClickListener {
+
+                pickImageLauncher.launch(
+                    PickVisualMediaRequest(
+                        ActivityResultContracts
+                            .PickVisualMedia
+                            .ImageOnly
+                    )
                 )
-            )
-        }
+            }
     }
 
     private fun setupNameField() {
-        binding.etPlaylistName.doAfterTextChanged {
-            updateCreateButton()
-        }
+
+        binding.etPlaylistName
+            .doAfterTextChanged {
+
+                updateButton()
+            }
     }
 
-    private fun setupCreateButton() {
-        binding.btnCreatePlaylist.setOnClickListener {
-            createPlaylist()
-        }
+    private fun setupButton() {
+
+        binding.btnCreatePlaylist
+            .setOnClickListener {
+
+                if (isEditMode) {
+
+                    saveEditedPlaylist()
+
+                } else {
+
+                    createPlaylist()
+                }
+            }
 
         binding.btnCreatePlaylist.setTextColor(
             resources.getColor(
@@ -138,7 +236,8 @@ class CreatePlaylistFragment :
         )
     }
 
-    private fun updateCreateButton() {
+    private fun updateButton() {
+
         val isEnabled =
             binding.etPlaylistName.text
                 .toString()
@@ -150,11 +249,14 @@ class CreatePlaylistFragment :
 
         binding.btnCreatePlaylist.background =
             if (isEnabled) {
+
                 resources.getDrawable(
                     R.drawable.bg_button_enabled,
                     requireContext().theme
                 )
+
             } else {
+
                 resources.getDrawable(
                     R.drawable.bg_button_disabled,
                     requireContext().theme
@@ -169,7 +271,53 @@ class CreatePlaylistFragment :
         )
     }
 
+    private fun loadPlaylist() {
+
+        viewLifecycleOwner
+            .lifecycleScope
+            .launch {
+
+                val playlist =
+                    playlistInteractor.getPlaylist(
+                        editPlaylistId
+                    )
+
+                if (!isAdded) {
+                    return@launch
+                }
+
+                if (playlist == null) {
+
+                    findNavController()
+                        .navigateUp()
+
+                    return@launch
+                }
+
+                currentPlaylist =
+                    playlist
+
+                binding.etPlaylistName
+                    .setText(
+                        playlist.name
+                    )
+
+                binding.etPlaylistDescription
+                    .setText(
+                        playlist.description
+                            .orEmpty()
+                    )
+
+                showCurrentCover(
+                    playlist.coverPath
+                )
+
+                updateButton()
+            }
+    }
+
     private fun createPlaylist() {
+
         val playlistName =
             binding.etPlaylistName.text
                 .toString()
@@ -187,58 +335,140 @@ class CreatePlaylistFragment :
                     null
                 }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner
+            .lifecycleScope
+            .launch {
 
-            val copiedCoverPath =
-                selectedImageUri?.let { uri ->
-                    copyImageToInternalStorage(uri)
+                val copiedCoverPath =
+                    selectedImageUri?.let { uri ->
+                        copyImageToInternalStorage(
+                            uri
+                        )
+                    }
+
+                val playlist =
+                    Playlist(
+                        name = playlistName,
+                        description =
+                            playlistDescription,
+                        coverPath =
+                            copiedCoverPath,
+                        trackIds =
+                            emptyList(),
+                        tracksCount =
+                            0
+                    )
+
+                playlistInteractor
+                    .createPlaylist(
+                        playlist
+                    )
+
+                parentFragmentManager
+                    .setFragmentResult(
+                        "playlist_created",
+                        bundleOf(
+                            "playlist_name" to
+                                    playlistName
+                        )
+                    )
+
+                findNavController()
+                    .navigateUp()
+            }
+    }
+
+    private fun saveEditedPlaylist() {
+
+        val playlist =
+            currentPlaylist
+                ?: return
+
+        val playlistName =
+            binding.etPlaylistName.text
+                .toString()
+                .trim()
+
+        if (playlistName.isBlank()) {
+            return
+        }
+
+        val playlistDescription =
+            binding.etPlaylistDescription.text
+                .toString()
+                .trim()
+                .ifBlank {
+                    null
                 }
 
-            val playlist =
-                Playlist(
-                    name = playlistName,
-                    description = playlistDescription,
-                    coverPath = copiedCoverPath,
-                    trackIds = emptyList(),
-                    tracksCount = 0
-                )
+        viewLifecycleOwner
+            .lifecycleScope
+            .launch {
 
-            playlistInteractor.createPlaylist(
-                playlist
-            )
+                val coverPath =
+                    if (
+                        selectedImageUri != null
+                    ) {
 
-            parentFragmentManager.setFragmentResult(
-                "playlist_created",
-                bundleOf(
-                    "playlist_name" to playlistName
-                )
-            )
+                        copyImageToInternalStorage(
+                            selectedImageUri!!
+                        ) ?: playlist.coverPath
 
-            parentFragmentManager.popBackStack()
-        }
+                    } else {
+
+                        playlist.coverPath
+                    }
+
+                val updatedPlaylist =
+                    playlist.copy(
+                        name =
+                            playlistName,
+                        description =
+                            playlistDescription,
+                        coverPath =
+                            coverPath
+                    )
+
+                playlistInteractor
+                    .updatePlaylist(
+                        updatedPlaylist
+                    )
+
+                findNavController()
+                    .navigateUp()
+            }
     }
 
     private suspend fun copyImageToInternalStorage(
         uri: Uri
     ): String? {
 
-        val context = requireContext()
+        val context =
+            requireContext()
 
-        return withContext(Dispatchers.IO) {
+        return withContext(
+            Dispatchers.IO
+        ) {
 
             try {
+
                 val coversDirectory =
                     File(
                         context.filesDir,
                         "playlist_covers"
                     )
 
-                if (!coversDirectory.exists()) {
+                if (
+                    !coversDirectory.exists()
+                ) {
+
                     coversDirectory.mkdirs()
                 }
 
                 val extension =
-                    getFileExtension(uri)
+                    getFileExtension(
+                        uri
+                    )
 
                 val fileName =
                     "playlist_cover_${System.currentTimeMillis()}$extension"
@@ -255,14 +485,23 @@ class CreatePlaylistFragment :
                         ?: return@withContext null
 
                 inputStream.use { input ->
-                    destinationFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+
+                    destinationFile
+                        .outputStream()
+                        .use { output ->
+
+                            input.copyTo(
+                                output
+                            )
+                        }
                 }
 
                 destinationFile.absolutePath
 
-            } catch (_: Exception) {
+            } catch (
+                _: Exception
+            ) {
+
                 null
             }
         }
@@ -278,16 +517,25 @@ class CreatePlaylistFragment :
                 .getType(uri)
 
         return when (mimeType) {
-            "image/png" -> ".png"
-            "image/webp" -> ".webp"
-            "image/gif" -> ".gif"
-            else -> ".jpg"
+
+            "image/png" ->
+                ".png"
+
+            "image/webp" ->
+                ".webp"
+
+            "image/gif" ->
+                ".gif"
+
+            else ->
+                ".jpg"
         }
     }
 
     private fun showSelectedImage(
         uri: Uri
     ) {
+
         binding.ivPlaylistCover.visibility =
             View.VISIBLE
 
@@ -297,53 +545,128 @@ class CreatePlaylistFragment :
         Glide.with(this)
             .load(uri)
             .centerCrop()
-            .into(binding.ivPlaylistCover)
+            .into(
+                binding.ivPlaylistCover
+            )
+    }
+
+    private fun showCurrentCover(
+        coverPath: String?
+    ) {
+
+        if (
+            coverPath.isNullOrBlank()
+        ) {
+
+            binding.ivPlaylistCover.visibility =
+                View.GONE
+
+            binding.ivAddPhoto.visibility =
+                View.VISIBLE
+
+            return
+        }
+
+        val file =
+            File(coverPath)
+
+        if (!file.exists()) {
+
+            binding.ivPlaylistCover.visibility =
+                View.GONE
+
+            binding.ivAddPhoto.visibility =
+                View.VISIBLE
+
+            return
+        }
+
+        binding.ivPlaylistCover.visibility =
+            View.VISIBLE
+
+        binding.ivAddPhoto.visibility =
+            View.GONE
+
+        Glide.with(this)
+            .load(file)
+            .centerCrop()
+            .into(
+                binding.ivPlaylistCover
+            )
     }
 
     private fun handleBack() {
+
         if (hasUnsavedData()) {
+
             showExitDialog()
+
         } else {
-            parentFragmentManager.popBackStack()
+
+            findNavController()
+                .navigateUp()
         }
     }
 
     private fun hasUnsavedData(): Boolean {
-        return binding.etPlaylistName.text
+
+        return binding.etPlaylistName
+            .text
             .toString()
             .trim()
             .isNotBlank()
+
                 ||
-                binding.etPlaylistDescription.text
+
+                binding.etPlaylistDescription
+                    .text
                     .toString()
                     .trim()
                     .isNotBlank()
+
                 ||
+
                 selectedImageUri != null
     }
 
     private fun showExitDialog() {
-        AlertDialog.Builder(requireContext())
+
+        AlertDialog.Builder(
+            requireContext(),
+            R.style.PlaylistMakerDialogTheme
+        )
             .setTitle(
-                getString(R.string.finish_playlist_creation_title)
+                getString(
+                    R.string.finish_playlist_creation_title
+                )
             )
             .setMessage(
-                getString(R.string.finish_playlist_creation_message)
+                getString(
+                    R.string.finish_playlist_creation_message
+                )
             )
             .setNegativeButton(
-                getString(R.string.cancel),
+                getString(
+                    R.string.cancel
+                ),
                 null
             )
             .setPositiveButton(
-                getString(R.string.finish),
+                getString(
+                    R.string.finish
+                )
             ) { _, _ ->
-                parentFragmentManager.popBackStack()
+
+                findNavController()
+                    .navigateUp()
             }
             .show()
     }
 
     override fun onDestroyView() {
+
         super.onDestroyView()
+
         _binding = null
     }
 }

@@ -24,10 +24,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.playlistmaker.R
 import com.example.playlistmaker.domain.model.Track
 import com.example.playlistmaker.presentation.adapters.TrackAdapter
-import com.example.playlistmaker.presentation.model.TrackParcelable
 import com.example.playlistmaker.presentation.model.SearchContent
 import com.example.playlistmaker.presentation.model.SearchScreenState
 import com.example.playlistmaker.presentation.model.SearchViewModel
+import com.example.playlistmaker.presentation.model.TrackParcelable
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class SearchActivity : AppCompatActivity() {
@@ -44,11 +44,11 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var btnClearHistory: Button
     private lateinit var progressBar: ProgressBar
 
-    private val displayedTracks = ArrayList<Track>()
-
     private lateinit var adapter: TrackAdapter
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(
@@ -56,7 +56,9 @@ class SearchActivity : AppCompatActivity() {
             false
         )
 
-        setContentView(R.layout.activity_search)
+        setContentView(
+            R.layout.activity_search
+        )
 
         val isNightMode =
             resources.configuration.uiMode and
@@ -67,24 +69,28 @@ class SearchActivity : AppCompatActivity() {
             window,
             window.decorView
         ).apply {
-            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightStatusBars =
+                !isNightMode
         }
 
-        val rootView = findViewById<View>(
-            R.id.root_layout
-        )
+        val rootView =
+            findViewById<View>(
+                R.id.root_layout
+            )
 
-        val toolbarLayout = findViewById<View>(
-            R.id.toolbar_layout
-        )
+        val toolbarLayout =
+            findViewById<View>(
+                R.id.toolbar_layout
+            )
 
         ViewCompat.setOnApplyWindowInsetsListener(
             rootView
         ) { _, insets ->
 
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars()
-            )
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
 
             val density =
                 resources.displayMetrics.density
@@ -116,41 +122,50 @@ class SearchActivity : AppCompatActivity() {
             finish()
         }
 
-        etSearch = findViewById(
-            R.id.et_search
-        )
+        etSearch =
+            findViewById(
+                R.id.et_search
+            )
 
-        placeholderContainer = findViewById(
-            R.id.placeholder_container
-        )
+        placeholderContainer =
+            findViewById(
+                R.id.placeholder_container
+            )
 
-        placeholderImage = findViewById(
-            R.id.placeholder_image
-        )
+        placeholderImage =
+            findViewById(
+                R.id.placeholder_image
+            )
 
-        placeholderMessage = findViewById(
-            R.id.placeholder_message
-        )
+        placeholderMessage =
+            findViewById(
+                R.id.placeholder_message
+            )
 
-        btnRetry = findViewById(
-            R.id.btn_retry
-        )
+        btnRetry =
+            findViewById(
+                R.id.btn_retry
+            )
 
-        tvHistoryTitle = findViewById(
-            R.id.tv_history_title
-        )
+        tvHistoryTitle =
+            findViewById(
+                R.id.tv_history_title
+            )
 
-        btnClearHistory = findViewById(
-            R.id.btn_clear_history
-        )
+        btnClearHistory =
+            findViewById(
+                R.id.btn_clear_history
+            )
 
-        progressBar = findViewById(
-            R.id.progress_bar
-        )
+        progressBar =
+            findViewById(
+                R.id.progress_bar
+            )
 
-        rvTracks = findViewById(
-            R.id.rv_tracks
-        )
+        rvTracks =
+            findViewById(
+                R.id.rv_tracks
+            )
     }
 
     private fun initRecyclerView() {
@@ -159,19 +174,21 @@ class SearchActivity : AppCompatActivity() {
             LinearLayoutManager(this)
 
         adapter = TrackAdapter(
-            displayedTracks
-        ) { track ->
-            viewModel.onTrackSelected(track)
-        }
+            onTrackClick = { track ->
+                viewModel.onTrackSelected(track)
+            }
+        )
 
-        rvTracks.adapter = adapter
+        rvTracks.adapter =
+            adapter
     }
 
     private fun initListeners() {
 
-        val btnClear = findViewById<ImageView>(
-            R.id.btn_clear_search
-        )
+        val btnClear =
+            findViewById<ImageView>(
+                R.id.btn_clear_search
+            )
 
         btnClear.setOnClickListener {
 
@@ -188,14 +205,16 @@ class SearchActivity : AppCompatActivity() {
             viewModel.clearHistory()
         }
 
-        etSearch.doOnTextChanged { text, _, _, _ ->
+        etSearch.doOnTextChanged {
+                text, _, _, _ ->
 
             viewModel.onQueryChanged(
                 text?.toString().orEmpty()
             )
         }
 
-        etSearch.setOnFocusChangeListener { _, hasFocus ->
+        etSearch.setOnFocusChangeListener {
+                _, hasFocus ->
 
             viewModel.onFocusChanged(
                 hasFocus
@@ -209,8 +228,11 @@ class SearchActivity : AppCompatActivity() {
                 actionId ==
                 EditorInfo.IME_ACTION_DONE
             ) {
+
                 viewModel.searchNow()
+
                 true
+
             } else {
                 false
             }
@@ -257,25 +279,20 @@ class SearchActivity : AppCompatActivity() {
 
         when (state.content) {
 
-            SearchContent.HISTORY -> {
+            SearchContent.HISTORY ->
                 showHistory(state.tracks)
-            }
 
-            SearchContent.TRACKS -> {
+            SearchContent.TRACKS ->
                 showTracks(state.tracks)
-            }
 
-            SearchContent.NOTHING_FOUND -> {
+            SearchContent.NOTHING_FOUND ->
                 showNothingFound()
-            }
 
-            SearchContent.ERROR -> {
+            SearchContent.ERROR ->
                 showError()
-            }
 
-            SearchContent.EMPTY -> {
+            SearchContent.EMPTY ->
                 showEmpty()
-            }
         }
     }
 
@@ -435,29 +452,26 @@ class SearchActivity : AppCompatActivity() {
         newTracks: List<Track>
     ) {
 
-        displayedTracks.clear()
-
-        displayedTracks.addAll(
+        adapter.setTracks(
             newTracks
         )
-
-        adapter.notifyDataSetChanged()
     }
 
     private fun openPlayer(
         track: Track
     ) {
 
-        val intent = Intent(
-            this,
-            PlayerActivity::class.java
-        ).apply {
+        val intent =
+            Intent(
+                this,
+                PlayerActivity::class.java
+            ).apply {
 
-            putExtra(
-                PlayerActivity.EXTRA_TRACK,
-                TrackParcelable.fromDomain(track)
-            )
-        }
+                putExtra(
+                    PlayerActivity.EXTRA_TRACK,
+                    TrackParcelable.fromDomain(track)
+                )
+            }
 
         startActivity(intent)
     }
@@ -466,9 +480,10 @@ class SearchActivity : AppCompatActivity() {
         view: View
     ) {
 
-        val imm = getSystemService(
-            Context.INPUT_METHOD_SERVICE
-        ) as InputMethodManager
+        val imm =
+            getSystemService(
+                Context.INPUT_METHOD_SERVICE
+            ) as InputMethodManager
 
         imm.hideSoftInputFromWindow(
             view.windowToken,
@@ -506,7 +521,8 @@ class SearchActivity : AppCompatActivity() {
 
         } else {
 
-            recyclerParams.height = 0
+            recyclerParams.height =
+                0
 
             recyclerParams.bottomToTop =
                 R.id.btn_clear_history
